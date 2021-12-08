@@ -126,14 +126,10 @@ const char OUTY_L_A = 0b10101010;
 const char OUTZ_H_A = 0b10101101;
 const char OUTZ_L_A = 0b10101100;
 
-const char STATUS_REG = 0b10011110;
-
 static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
-static uint8_t       m_tx_buf0[] = {STATUS_REG,0x00};
 static uint8_t       m_tx_buf1[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
 static uint8_t       m_tx_buf2[] = {OUTZ_H_A,0x00};
 static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
-uint8_t       m_rx_buf[sizeof(m_tx_buf0)];    /**< RX buffer. */
 uint8_t       m_rx_buf1[sizeof(m_tx_buf2)];    /**< RX buffer. */
 uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
 static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
@@ -557,9 +553,8 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             // My edit: Get the pointer to the received data the length of which is p_evt->params.hvx.notif_len
             uint8_t * p_received_data = p_evt->p_rcv_data;
             if(!doPrint){
-              for(int i=0;i<p_evt->params.hvx.notif_len;i++){
-              NRF_LOG_INFO("Data received:, %d",p_received_data[i]);
-              }
+              //NRF_LOG_INFO("D:%d,%d,%d,%d,%d,%d",p_received_data[0],p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+              NRF_LOG_RAW_INFO("X:%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
               doPrint=true;
             }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1268,8 +1263,6 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
 void readAccelerometer(){
 
 
-      //This function could be simplified by reading all the registers in one transaction (note that the registers are in an incremental order, this can also be used to save code)
-
         m_tx_buf2[0]=OUTX_H_A;
         nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
         //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
@@ -1314,19 +1307,6 @@ void readAccelerometer(){
         output_buffer[5] = XL_Z[1];
 
 
-
-}
-
-
-bool newAccDataAvailable(){
-   bool dataIsAvailable = false;
-   nrf_drv_spi_transfer(&spi, m_tx_buf0, 1, m_rx_buf, 2);
-   while(!spi_xfer_done){}
-   spi_xfer_done=false;
-   if((m_rx_buf[1] & 0x01) == 0x01){
-      dataIsAvailable=true;
-   }
-   return dataIsAvailable;
 
 }
 
@@ -1376,7 +1356,7 @@ int main(void)
     NRF_LOG_INFO("ATT MTU example started.");
     NRF_LOG_INFO("Press button 3 on the board connected to the PC.");
     NRF_LOG_INFO("Press button 4 on other board.");
-    uint32_t volatile delay_us = 1;
+    uint32_t volatile delay_us = 1000000;
     int i = 0;
     int j = 0;
     m_run_test = false;
@@ -1389,22 +1369,9 @@ int main(void)
       
       idle_state_handle();
       
+
       //SPI code
-      //nrf_delay_us(delay_us);
-      //newAccDataAvailable();
-      //readAccelerometer();
 
-
-
-      if(newAccDataAvailable()){
-      nrf_delay_us(1);
-        readAccelerometer();
-        if (is_test_ready())
-        {   
-            //SPI stuff
-            send_SPI_RX_buf(&m_amts);
-        }
-      }
       j++;
     }
 }

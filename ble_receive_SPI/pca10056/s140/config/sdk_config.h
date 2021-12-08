@@ -8188,7 +8188,7 @@
 // <i> longer one will be fragmented.
 
 #ifndef NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE
-#define NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE 64
+#define NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE 1024
 #endif
 
 // </e>
@@ -8208,7 +8208,7 @@
 // <i> a timestamp and up to 2 arguments in a single memory object.
 
 #ifndef NRF_LOG_MSGPOOL_ELEMENT_SIZE
-#define NRF_LOG_MSGPOOL_ELEMENT_SIZE 20
+#define NRF_LOG_MSGPOOL_ELEMENT_SIZE 200
 #endif
 
 // <o> NRF_LOG_MSGPOOL_ELEMENT_COUNT - Number of elements in the pool of memory objects 
@@ -8249,7 +8249,7 @@
 // <16384=> 16384 
 
 #ifndef NRF_LOG_BUFSIZE
-#define NRF_LOG_BUFSIZE 8192
+#define NRF_LOG_BUFSIZE 16384
 #endif
 
 // <q> NRF_LOG_CLI_CMDS  - Enable CLI commands for the module.
@@ -8386,7 +8386,7 @@
 // <i> Function for getting the timestamp is provided by the user
 //==========================================================
 #ifndef NRF_LOG_USES_TIMESTAMP
-#define NRF_LOG_USES_TIMESTAMP 1
+#define NRF_LOG_USES_TIMESTAMP 0
 #endif
 // <o> NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY - Default frequency of the timestamp (in Hz) or 0 to use app_timer frequency. 
 #ifndef NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY
