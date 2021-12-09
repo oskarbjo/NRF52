@@ -83,6 +83,8 @@
 #include "nrf_drv_spi.h"
 #include "nrfx_spi.h"
 
+#include "lsm6dsrx.h"
+
 
 #define DATA_LENGTH_DEFAULT             27                                              /**< The stack default data length. */
 #define DATA_LENGTH_MAX                 251                                             /**< The stack maximum data length. */
@@ -119,28 +121,22 @@ static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instanc
 const char CTRL1_XL = 0b00010000;
 const char CTRL1_XL_SETTINGS = 0b01000000;
 
-const char OUTX_H_A = 0b10101001;
-const char OUTX_L_A = 0b10101000;
-const char OUTY_H_A = 0b10101011;
-const char OUTY_L_A = 0b10101010;
-const char OUTZ_H_A = 0b10101101;
-const char OUTZ_L_A = 0b10101100;
-
 const char STATUS_REG = 0b10011110;
 
-static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
+//static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
+static uint8_t m_tx_buf[] = {0x00,0x00};
 static uint8_t       m_tx_buf0[] = {STATUS_REG,0x00};
 static uint8_t       m_tx_buf1[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
 static uint8_t       m_tx_buf2[] = {OUTZ_H_A,0x00};
-static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
+//static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
 uint8_t       m_rx_buf[sizeof(m_tx_buf0)];    /**< RX buffer. */
-uint8_t       m_rx_buf1[sizeof(m_tx_buf2)];    /**< RX buffer. */
+uint8_t       m_rx_buf1[sizeof(m_tx_buf1)];    /**< RX buffer. */
 uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
-static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
+//static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
 
-char XL_X[2]={0,0};
-char XL_Y[2]={0,0};
-char XL_Z[2]={0,0};
+static uint8_t       m_tx_buf_all_axes[] = {OUTX_H_A,OUTX_L_A,OUTY_H_A,OUTY_L_A,OUTZ_H_A,OUTZ_L_A,0x00};           /**< TX buffer. */
+static char       m_rx_buf_all_axes[sizeof(m_tx_buf_all_axes)+1];    /**< RX buffer. */
+
 
 char output_buffer[6];
 
@@ -1266,55 +1262,17 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
 
 
 void readAccelerometer(){
-
-
-      //This function could be simplified by reading all the registers in one transaction (note that the registers are in an incremental order, this can also be used to save code)
-
-        m_tx_buf2[0]=OUTX_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_X[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTX_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_X[1]=m_rx_buf2[1];
-
-        m_tx_buf2[0]=OUTY_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Y[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTY_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Y[1]=m_rx_buf2[1];
-        
-        m_tx_buf2[0]=OUTZ_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Z[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTZ_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Z[1]=m_rx_buf2[1];
-
-        output_buffer[0] = XL_X[0];
-        output_buffer[1] = XL_X[1];
-        output_buffer[2] = XL_Y[0];
-        output_buffer[3] = XL_Y[1];
-        output_buffer[4] = XL_Z[0];
-        output_buffer[5] = XL_Z[1];
-
-
-
+      uint8_t regNr = 0;
+      m_tx_buf[0] = OUTX_L_A;
+      for(int i = regNr; i<6; i++){
+          nrf_drv_spi_transfer(&spi, m_tx_buf, 2, m_rx_buf, 2);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+          if(i>1){
+            output_buffer[i] = m_rx_buf[1];
+          }
+          m_tx_buf[0]++;
+      }
 }
 
 
@@ -1361,22 +1319,22 @@ int main(void)
     spi_config.mosi_pin = SPI_MOSI_PIN;
     spi_config.sck_pin  = SPI_SCK_PIN;
     spi_config.mode = NRF_DRV_SPI_MODE_0;
-    spi_config.frequency = NRF_DRV_SPI_FREQ_4M; //2147483648 = 8MHz
+    spi_config.frequency = NRF_DRV_SPI_FREQ_2M; //2147483648 = 8MHz
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler, NULL));
-
     // Start execution.
     cli_start();
     buttons_enable();
 
     //Write SPI settings to IMU chip:
     nrf_drv_spi_transfer(&spi, m_tx_buf1, 2, m_rx_buf1, 2);
-    while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
 
 
     NRF_LOG_INFO("ATT MTU example started.");
     NRF_LOG_INFO("Press button 3 on the board connected to the PC.");
     NRF_LOG_INFO("Press button 4 on other board.");
-    uint32_t volatile delay_us = 1;
+    uint32_t volatile delay_us = 10000;
     int i = 0;
     int j = 0;
     m_run_test = false;
@@ -1388,21 +1346,17 @@ int main(void)
 
       
       idle_state_handle();
-      
-      //SPI code
-      //nrf_delay_us(delay_us);
-      //newAccDataAvailable();
+      nrf_delay_us(delay_us);
       //readAccelerometer();
-
-
-
+      
       if(newAccDataAvailable()){
-      nrf_delay_us(1);
+
         readAccelerometer();
         if (is_test_ready())
         {   
             //SPI stuff
             send_SPI_RX_buf(&m_amts);
+            
         }
       }
       j++;

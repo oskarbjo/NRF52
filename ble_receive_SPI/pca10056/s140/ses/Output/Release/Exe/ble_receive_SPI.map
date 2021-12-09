@@ -12266,66 +12266,66 @@ LOAD linker stubs
  .debug_line    0x000000000002cd96      0xa2c Output/Release/Obj/ble_receive_SPI/nrf_sdh_ble.o
  .debug_line    0x000000000002d7c2      0x65e Output/Release/Obj/ble_receive_SPI/nrf_sdh_soc.o
 
-.debug_info     0x0000000000000000    0x58f49
+.debug_info     0x0000000000000000    0x58f4a
  .debug_info    0x0000000000000000       0x22 Output/Release/Obj/ble_receive_SPI/thumb_crt0.o
  .debug_info    0x0000000000000022      0x54b Output/Release/Obj/ble_receive_SPI/nrf_log_backend_rtt.o
  .debug_info    0x000000000000056d      0x77b Output/Release/Obj/ble_receive_SPI/nrf_log_backend_serial.o
  .debug_info    0x0000000000000ce8     0x1163 Output/Release/Obj/ble_receive_SPI/nrf_log_backend_uart.o
  .debug_info    0x0000000000001e4b      0x361 Output/Release/Obj/ble_receive_SPI/nrf_log_default_backends.o
- .debug_info    0x00000000000021ac     0x40d1 Output/Release/Obj/ble_receive_SPI/nrf_log_frontend.o
- .debug_info    0x000000000000627d      0x7a5 Output/Release/Obj/ble_receive_SPI/nrf_log_str_formatter.o
- .debug_info    0x0000000000006a22      0xcd5 Output/Release/Obj/ble_receive_SPI/app_button.o
- .debug_info    0x00000000000076f7      0x2a4 Output/Release/Obj/ble_receive_SPI/app_error.o
- .debug_info    0x000000000000799b      0x395 Output/Release/Obj/ble_receive_SPI/app_error_weak.o
- .debug_info    0x0000000000007d30     0x179b Output/Release/Obj/ble_receive_SPI/app_timer2.o
- .debug_info    0x00000000000094cb      0xa31 Output/Release/Obj/ble_receive_SPI/app_util_platform.o
- .debug_info    0x0000000000009efc     0x2101 Output/Release/Obj/ble_receive_SPI/drv_rtc.o
- .debug_info    0x000000000000bffd      0x8e9 Output/Release/Obj/ble_receive_SPI/nrf_atfifo.o
- .debug_info    0x000000000000c8e6      0x933 Output/Release/Obj/ble_receive_SPI/nrf_atomic.o
- .debug_info    0x000000000000d219     0x1033 Output/Release/Obj/ble_receive_SPI/nrf_balloc.o
- .debug_info    0x000000000000e24c     0x6dba Output/Release/Obj/ble_receive_SPI/nrf_cli.o
- .debug_info    0x0000000000015006      0xa43 Output/Release/Obj/ble_receive_SPI/nrf_cli_rtt.o
- .debug_info    0x0000000000015a49     0x1acc Output/Release/Obj/ble_receive_SPI/nrf_cli_uart.o
- .debug_info    0x0000000000017515      0x233 Output/Release/Obj/ble_receive_SPI/nrf_fprintf.o
- .debug_info    0x0000000000017748      0x72d Output/Release/Obj/ble_receive_SPI/nrf_fprintf_format.o
- .debug_info    0x0000000000017e75      0x916 Output/Release/Obj/ble_receive_SPI/nrf_memobj.o
- .debug_info    0x000000000001878b     0x134b Output/Release/Obj/ble_receive_SPI/nrf_pwr_mgmt.o
- .debug_info    0x0000000000019ad6     0x1bc8 Output/Release/Obj/ble_receive_SPI/nrf_queue.o
- .debug_info    0x000000000001b69e      0x622 Output/Release/Obj/ble_receive_SPI/nrf_ringbuf.o
- .debug_info    0x000000000001bcc0      0x192 Output/Release/Obj/ble_receive_SPI/nrf_section_iter.o
- .debug_info    0x000000000001be52      0x41f Output/Release/Obj/ble_receive_SPI/nrf_sortlist.o
- .debug_info    0x000000000001c271      0x1f8 Output/Release/Obj/ble_receive_SPI/nrf_strerror.o
- .debug_info    0x000000000001c469       0x23 Output/Release/Obj/ble_receive_SPI/ses_startup_nrf52840.o
- .debug_info    0x000000000001c48c       0x23 Output/Release/Obj/ble_receive_SPI/ses_startup_nrf_common.o
- .debug_info    0x000000000001c4af     0x1754 Output/Release/Obj/ble_receive_SPI/system_nrf52840.o
- .debug_info    0x000000000001dc03      0xcf8 Output/Release/Obj/ble_receive_SPI/boards.o
- .debug_info    0x000000000001e8fb     0x1782 Output/Release/Obj/ble_receive_SPI/nrf_drv_clock.o
- .debug_info    0x000000000002007d     0x11c7 Output/Release/Obj/ble_receive_SPI/nrf_drv_uart.o
- .debug_info    0x0000000000021244     0x131b Output/Release/Obj/ble_receive_SPI/nrfx_clock.o
- .debug_info    0x000000000002255f     0x3771 Output/Release/Obj/ble_receive_SPI/nrfx_gpiote.o
- .debug_info    0x0000000000025cd0      0x85d Output/Release/Obj/ble_receive_SPI/nrfx_prs.o
- .debug_info    0x000000000002652d     0x1a7d Output/Release/Obj/ble_receive_SPI/nrfx_rtc.o
- .debug_info    0x0000000000027faa     0x31e9 Output/Release/Obj/ble_receive_SPI/nrfx_uart.o
- .debug_info    0x000000000002b193     0x33b0 Output/Release/Obj/ble_receive_SPI/nrfx_uarte.o
- .debug_info    0x000000000002e543      0xf12 Output/Release/Obj/ble_receive_SPI/nrf_drv_spi.o
- .debug_info    0x000000000002f455     0x2831 Output/Release/Obj/ble_receive_SPI/nrfx_spim.o
- .debug_info    0x0000000000031c86     0x1389 Output/Release/Obj/ble_receive_SPI/bsp.o
- .debug_info    0x000000000003300f     0x2a3f Output/Release/Obj/ble_receive_SPI/amtc.o
- .debug_info    0x0000000000035a4e     0x29f6 Output/Release/Obj/ble_receive_SPI/amts.o
- .debug_info    0x0000000000038444      0x819 Output/Release/Obj/ble_receive_SPI/counter.o
- .debug_info    0x0000000000038c5d     0x1773 Output/Release/Obj/ble_receive_SPI/example_cmds.o
- .debug_info    0x000000000003a3d0     0x8b27 Output/Release/Obj/ble_receive_SPI/main.o
- .debug_info    0x0000000000042ef7     0x1747 Output/Release/Obj/ble_receive_SPI/SEGGER_RTT.o
- .debug_info    0x000000000004463e     0x1b0e Output/Release/Obj/ble_receive_SPI/ble_advdata.o
- .debug_info    0x000000000004614c     0x347c Output/Release/Obj/ble_receive_SPI/ble_db_discovery.o
- .debug_info    0x00000000000495c8      0xc6c Output/Release/Obj/ble_receive_SPI/ble_srv_common.o
- .debug_info    0x000000000004a234     0x29c7 Output/Release/Obj/ble_receive_SPI/nrf_ble_gatt.o
- .debug_info    0x000000000004cbfb     0x2e36 Output/Release/Obj/ble_receive_SPI/nrf_ble_gq.o
- .debug_info    0x000000000004fa31     0x208a Output/Release/Obj/ble_receive_SPI/nrf_ble_qwr.o
- .debug_info    0x0000000000051abb     0x2eba Output/Release/Obj/ble_receive_SPI/nrf_ble_scan.o
- .debug_info    0x0000000000054975     0x12f3 Output/Release/Obj/ble_receive_SPI/nrf_sdh.o
- .debug_info    0x0000000000055c68     0x2c9a Output/Release/Obj/ble_receive_SPI/nrf_sdh_ble.o
- .debug_info    0x0000000000058902      0x647 Output/Release/Obj/ble_receive_SPI/nrf_sdh_soc.o
+ .debug_info    0x00000000000021ac     0x40d2 Output/Release/Obj/ble_receive_SPI/nrf_log_frontend.o
+ .debug_info    0x000000000000627e      0x7a5 Output/Release/Obj/ble_receive_SPI/nrf_log_str_formatter.o
+ .debug_info    0x0000000000006a23      0xcd5 Output/Release/Obj/ble_receive_SPI/app_button.o
+ .debug_info    0x00000000000076f8      0x2a4 Output/Release/Obj/ble_receive_SPI/app_error.o
+ .debug_info    0x000000000000799c      0x395 Output/Release/Obj/ble_receive_SPI/app_error_weak.o
+ .debug_info    0x0000000000007d31     0x179b Output/Release/Obj/ble_receive_SPI/app_timer2.o
+ .debug_info    0x00000000000094cc      0xa31 Output/Release/Obj/ble_receive_SPI/app_util_platform.o
+ .debug_info    0x0000000000009efd     0x2101 Output/Release/Obj/ble_receive_SPI/drv_rtc.o
+ .debug_info    0x000000000000bffe      0x8e9 Output/Release/Obj/ble_receive_SPI/nrf_atfifo.o
+ .debug_info    0x000000000000c8e7      0x933 Output/Release/Obj/ble_receive_SPI/nrf_atomic.o
+ .debug_info    0x000000000000d21a     0x1033 Output/Release/Obj/ble_receive_SPI/nrf_balloc.o
+ .debug_info    0x000000000000e24d     0x6dba Output/Release/Obj/ble_receive_SPI/nrf_cli.o
+ .debug_info    0x0000000000015007      0xa43 Output/Release/Obj/ble_receive_SPI/nrf_cli_rtt.o
+ .debug_info    0x0000000000015a4a     0x1acc Output/Release/Obj/ble_receive_SPI/nrf_cli_uart.o
+ .debug_info    0x0000000000017516      0x233 Output/Release/Obj/ble_receive_SPI/nrf_fprintf.o
+ .debug_info    0x0000000000017749      0x72d Output/Release/Obj/ble_receive_SPI/nrf_fprintf_format.o
+ .debug_info    0x0000000000017e76      0x916 Output/Release/Obj/ble_receive_SPI/nrf_memobj.o
+ .debug_info    0x000000000001878c     0x134b Output/Release/Obj/ble_receive_SPI/nrf_pwr_mgmt.o
+ .debug_info    0x0000000000019ad7     0x1bc8 Output/Release/Obj/ble_receive_SPI/nrf_queue.o
+ .debug_info    0x000000000001b69f      0x622 Output/Release/Obj/ble_receive_SPI/nrf_ringbuf.o
+ .debug_info    0x000000000001bcc1      0x192 Output/Release/Obj/ble_receive_SPI/nrf_section_iter.o
+ .debug_info    0x000000000001be53      0x41f Output/Release/Obj/ble_receive_SPI/nrf_sortlist.o
+ .debug_info    0x000000000001c272      0x1f8 Output/Release/Obj/ble_receive_SPI/nrf_strerror.o
+ .debug_info    0x000000000001c46a       0x23 Output/Release/Obj/ble_receive_SPI/ses_startup_nrf52840.o
+ .debug_info    0x000000000001c48d       0x23 Output/Release/Obj/ble_receive_SPI/ses_startup_nrf_common.o
+ .debug_info    0x000000000001c4b0     0x1754 Output/Release/Obj/ble_receive_SPI/system_nrf52840.o
+ .debug_info    0x000000000001dc04      0xcf8 Output/Release/Obj/ble_receive_SPI/boards.o
+ .debug_info    0x000000000001e8fc     0x1782 Output/Release/Obj/ble_receive_SPI/nrf_drv_clock.o
+ .debug_info    0x000000000002007e     0x11c7 Output/Release/Obj/ble_receive_SPI/nrf_drv_uart.o
+ .debug_info    0x0000000000021245     0x131b Output/Release/Obj/ble_receive_SPI/nrfx_clock.o
+ .debug_info    0x0000000000022560     0x3771 Output/Release/Obj/ble_receive_SPI/nrfx_gpiote.o
+ .debug_info    0x0000000000025cd1      0x85d Output/Release/Obj/ble_receive_SPI/nrfx_prs.o
+ .debug_info    0x000000000002652e     0x1a7d Output/Release/Obj/ble_receive_SPI/nrfx_rtc.o
+ .debug_info    0x0000000000027fab     0x31e9 Output/Release/Obj/ble_receive_SPI/nrfx_uart.o
+ .debug_info    0x000000000002b194     0x33b0 Output/Release/Obj/ble_receive_SPI/nrfx_uarte.o
+ .debug_info    0x000000000002e544      0xf12 Output/Release/Obj/ble_receive_SPI/nrf_drv_spi.o
+ .debug_info    0x000000000002f456     0x2831 Output/Release/Obj/ble_receive_SPI/nrfx_spim.o
+ .debug_info    0x0000000000031c87     0x1389 Output/Release/Obj/ble_receive_SPI/bsp.o
+ .debug_info    0x0000000000033010     0x2a3f Output/Release/Obj/ble_receive_SPI/amtc.o
+ .debug_info    0x0000000000035a4f     0x29f6 Output/Release/Obj/ble_receive_SPI/amts.o
+ .debug_info    0x0000000000038445      0x819 Output/Release/Obj/ble_receive_SPI/counter.o
+ .debug_info    0x0000000000038c5e     0x1773 Output/Release/Obj/ble_receive_SPI/example_cmds.o
+ .debug_info    0x000000000003a3d1     0x8b27 Output/Release/Obj/ble_receive_SPI/main.o
+ .debug_info    0x0000000000042ef8     0x1747 Output/Release/Obj/ble_receive_SPI/SEGGER_RTT.o
+ .debug_info    0x000000000004463f     0x1b0e Output/Release/Obj/ble_receive_SPI/ble_advdata.o
+ .debug_info    0x000000000004614d     0x347c Output/Release/Obj/ble_receive_SPI/ble_db_discovery.o
+ .debug_info    0x00000000000495c9      0xc6c Output/Release/Obj/ble_receive_SPI/ble_srv_common.o
+ .debug_info    0x000000000004a235     0x29c7 Output/Release/Obj/ble_receive_SPI/nrf_ble_gatt.o
+ .debug_info    0x000000000004cbfc     0x2e36 Output/Release/Obj/ble_receive_SPI/nrf_ble_gq.o
+ .debug_info    0x000000000004fa32     0x208a Output/Release/Obj/ble_receive_SPI/nrf_ble_qwr.o
+ .debug_info    0x0000000000051abc     0x2eba Output/Release/Obj/ble_receive_SPI/nrf_ble_scan.o
+ .debug_info    0x0000000000054976     0x12f3 Output/Release/Obj/ble_receive_SPI/nrf_sdh.o
+ .debug_info    0x0000000000055c69     0x2c9a Output/Release/Obj/ble_receive_SPI/nrf_sdh_ble.o
+ .debug_info    0x0000000000058903      0x647 Output/Release/Obj/ble_receive_SPI/nrf_sdh_soc.o
 
 .debug_abbrev   0x0000000000000000     0xc897
  .debug_abbrev  0x0000000000000000       0x12 Output/Release/Obj/ble_receive_SPI/thumb_crt0.o

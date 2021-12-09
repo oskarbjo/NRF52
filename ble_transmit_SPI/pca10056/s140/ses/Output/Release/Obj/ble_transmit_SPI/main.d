@@ -133,4 +133,5 @@ Output/Release/Obj/ble_transmit_SPI/main.o: \
  ../../../../../../../modules/nrfx/drivers/include/nrfx_spim.h \
  ../../../../../../../modules/nrfx/hal/nrf_spim.h \
  ../../../../../../../modules/nrfx/drivers/include/nrfx_spi.h \
- ../../../../../../../modules/nrfx/hal/nrf_spi.h
+ ../../../../../../../modules/nrfx/hal/nrf_spi.h \
+ C\:\Users\objoerkqvist\Segger\nRF5_SDK_17.1.0_ddde560\examples\ble_central_and_peripheral\my_code\ble_transmit_SPI\pca10056\s140\ses\lsm6dsrx.h
