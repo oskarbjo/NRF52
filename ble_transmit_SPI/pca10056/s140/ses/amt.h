@@ -68,6 +68,14 @@ extern "C" {
 #define AMT_RCV_BYTES_CNT_CHAR_UUID         0x1525
 #define AMT_RCV_DATA_CHAR_UUID              0x1526
 
+#define SERVICE_UUID_BASE2   {0xBB, 0x4A, 0xFF, 0x4F, 0xAD, 0x03, 0x41, 0x5D, \
+                             0xA9, 0x6C, 0x9D, 0x6C, 0xDD, 0xDA, 0x83, 0x05}
+
+#define AMT_SERVICE_UUID2                    0x1527
+#define AMTS_CHAR_UUID2                      0x1528
+#define AMT_RCV_BYTES_CNT_CHAR_UUID2         0x1529
+#define AMT_RCV_DATA_CHAR_UUID2              0x1530
+
 #define AMT_RCV_BYTES_CNT_MAX_LEN           4
 #define AMT_BYTE_TRANSFER_CNT               (1 * 1024) //1024 * 1024
 

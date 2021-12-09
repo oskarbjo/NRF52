@@ -150,6 +150,8 @@ void nrf_ble_amtc_on_db_disc_evt(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t 
     {
         return;
     }
+    
+
 
     nrf_ble_amtc_evt_t evt;
     evt.conn_handle = p_evt->conn_handle;
@@ -168,12 +170,15 @@ void nrf_ble_amtc_on_db_disc_evt(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t 
                 p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
         }
 
+
         if ((uuid.uuid == AMT_RCV_BYTES_CNT_CHAR_UUID) && (uuid.type == p_ctx->uuid_type))
         {
             // Found AMT Number of received bytes characteristic. Store handles.
             evt.params.peer_db.amt_rbc_handle =
                 p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
         }
+        
+
     }
 
     NRF_LOG_DEBUG("AMT service discovered at peer.");
@@ -192,6 +197,67 @@ void nrf_ble_amtc_on_db_disc_evt(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t 
 
     evt.evt_type = NRF_BLE_AMT_C_EVT_DISCOVERY_COMPLETE;
     p_ctx->evt_handler(p_ctx, &evt);
+
+}
+
+
+void nrf_ble_amtc_on_db_disc_evt2(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t const * p_evt)
+{
+    // Check if the AMT service was discovered.
+    if (   (p_evt->evt_type != BLE_DB_DISCOVERY_COMPLETE)
+        || (p_evt->params.discovered_db.srv_uuid.uuid != AMT_SERVICE_UUID2)
+        || (p_evt->params.discovered_db.srv_uuid.type != p_ctx->uuid_type))
+    {
+        return;
+    }
+    
+
+
+    nrf_ble_amtc_evt_t evt;
+    evt.conn_handle = p_evt->conn_handle;
+
+    // Find the CCCD Handle of the AMT characteristic.
+    for (uint32_t i = 0; i < p_evt->params.discovered_db.char_count; i++)
+    {
+        ble_uuid_t uuid = p_evt->params.discovered_db.charateristics[i].characteristic.uuid;
+
+        if ((uuid.uuid == AMTS_CHAR_UUID2) && (uuid.type == p_ctx->uuid_type))
+        {
+            // Found AMT characteristic. Store handles.
+            evt.params.peer_db.amt_cccd_handle =
+                p_evt->params.discovered_db.charateristics[i].cccd_handle;
+            evt.params.peer_db.amt_handle =
+                p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
+        }
+
+
+        if ((uuid.uuid == AMT_RCV_BYTES_CNT_CHAR_UUID2) && (uuid.type == p_ctx->uuid_type))
+        {
+            // Found AMT Number of received bytes characteristic. Store handles.
+            evt.params.peer_db.amt_rbc_handle =
+                p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
+        }
+        
+
+    }
+
+    NRF_LOG_DEBUG("AMT service discovered at peer.");
+
+    //If the instance has been assigned prior to db_discovery, assign the db_handles.
+    if (p_ctx->conn_handle != BLE_CONN_HANDLE_INVALID)
+    {
+        if (   (p_ctx->peer_db.amt_cccd_handle == BLE_GATT_HANDLE_INVALID)
+            && (p_ctx->peer_db.amt_handle == BLE_GATT_HANDLE_INVALID))
+        {
+            p_ctx->peer_db = evt.params.peer_db;
+        }
+    }
+
+    p_ctx->bytes_rcvd_cnt = 0;
+
+    evt.evt_type = NRF_BLE_AMT_C_EVT_DISCOVERY_COMPLETE;
+    p_ctx->evt_handler(p_ctx, &evt);
+
 }
 
 

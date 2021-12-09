@@ -71,8 +71,8 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="1366" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="1" top="1336" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="36" y="161" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="amtc.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1366" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="1" top="1336" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="161" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="amtc.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="1" y="287" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="amts.c" selected="0" top="266" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="78" y="62" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/amtc.c" useBinaryEdit="0" left="0" path="amt.h" selected="0" top="44" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="22" y="220" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_throughput_HOST/pca10056/s140/ses/amtc.c" useBinaryEdit="0" left="0" path="../../../../../../../components/softdevice/s140/headers/ble.h" selected="0" top="204" codecName="Default"/>

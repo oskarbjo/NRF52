@@ -285,7 +285,9 @@ static void instructions_print(void)
  * Save the connection handle and GAP role, then discover the peer DB.
  */
 static void on_ble_gap_evt_connected(ble_gap_evt_t const * p_gap_evt)
-{
+{   
+
+    NRF_LOG_INFO("TRYING TO CONNECT");
     ret_code_t err_code;
 
     m_conn_handle = p_gap_evt->conn_handle;
@@ -299,10 +301,12 @@ static void on_ble_gap_evt_connected(ble_gap_evt_t const * p_gap_evt)
     {
         NRF_LOG_INFO("Connected as a central.");
     }
+    
 
+    // DISABLING SCANNING MAKES IT IMPOSSIBLE TO CONNECT TO MULTIPLE DEVICES. COMMENT OUT TO ENABLE MULTICONNECTION
     // Stop scanning and advertising.
-    nrf_ble_scan_stop();
-    (void) sd_ble_gap_adv_stop(m_adv_handle);
+    //nrf_ble_scan_stop();
+    //(void) sd_ble_gap_adv_stop(m_adv_handle);
 
     bsp_board_leds_off();
 
@@ -553,8 +557,10 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             // My edit: Get the pointer to the received data the length of which is p_evt->params.hvx.notif_len
             uint8_t * p_received_data = p_evt->p_rcv_data;
             if(!doPrint){
-              //NRF_LOG_INFO("D:%d,%d,%d,%d,%d,%d",p_received_data[0],p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+              //Look at using serial_tx() in nrf_log_backend_uart.c instead!
               NRF_LOG_RAW_INFO("X:%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+              //char context;
+              //serial_tx(&context,&p_received_data, sizeof(p_received_data));
               doPrint=true;
             }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -609,6 +615,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
 static void db_disc_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
     nrf_ble_amtc_on_db_disc_evt(&m_amtc, p_evt);
+    //nrf_ble_amtc_on_db_disc_evt2(&m_amtc, p_evt);
 }
 
 
@@ -1259,56 +1266,6 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
 
 }
 
-
-void readAccelerometer(){
-
-
-        m_tx_buf2[0]=OUTX_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_X[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTX_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_X[1]=m_rx_buf2[1];
-
-        m_tx_buf2[0]=OUTY_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Y[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTY_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Y[1]=m_rx_buf2[1];
-        
-        m_tx_buf2[0]=OUTZ_H_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf1, 2);
-        //while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Z[0]=m_rx_buf1[1];
-        m_tx_buf2[0]=OUTZ_L_A;
-        nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf2, 2);
-        while(!spi_xfer_done){}
-        spi_xfer_done=false;
-        XL_Z[1]=m_rx_buf2[1];
-
-        output_buffer[0] = XL_X[0];
-        output_buffer[1] = XL_X[1];
-        output_buffer[2] = XL_Y[0];
-        output_buffer[3] = XL_Y[1];
-        output_buffer[4] = XL_Z[0];
-        output_buffer[5] = XL_Z[1];
-
-
-
-}
 
 
 int main(void)
