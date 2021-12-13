@@ -289,6 +289,36 @@ ret_code_t nrf_ble_amtc_init(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amt
     return ble_db_discovery_evt_register(&amt_uuid);
 }
 
+ret_code_t nrf_ble_amtc_init2(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amtc_init)
+{
+    VERIFY_PARAM_NOT_NULL(p_ctx);
+    VERIFY_PARAM_NOT_NULL(p_amtc_init);
+    VERIFY_PARAM_NOT_NULL(p_amtc_init->p_gatt_queue);
+    VERIFY_PARAM_NOT_NULL(p_amtc_init->evt_handler);
+
+    ble_uuid128_t base_uuid = {SERVICE_UUID_BASE2};
+    ble_uuid_t    amt_uuid;
+
+    ret_code_t err_code = sd_ble_uuid_vs_add(&base_uuid, &p_ctx->uuid_type);
+    VERIFY_SUCCESS(err_code);
+
+    amt_uuid.type = p_ctx->uuid_type;
+    amt_uuid.uuid = AMT_SERVICE_UUID2;
+
+    p_ctx->evt_handler             = p_amtc_init->evt_handler;
+    p_ctx->p_gatt_queue            = p_amtc_init->p_gatt_queue;
+    p_ctx->bytes_rcvd_cnt          = 0;
+    p_ctx->conn_handle             = BLE_CONN_HANDLE_INVALID;
+    p_ctx->peer_db.amt_cccd_handle = BLE_GATT_HANDLE_INVALID;
+    p_ctx->peer_db.amt_handle      = BLE_GATT_HANDLE_INVALID;
+    p_ctx->conn_handle             = BLE_CONN_HANDLE_INVALID;
+    p_ctx->peer_db.amt_rbc_handle  = BLE_GATT_HANDLE_INVALID;
+
+    return ble_db_discovery_evt_register(&amt_uuid);
+}
+
+
+
 
 ret_code_t nrf_ble_amtc_handles_assign(nrf_ble_amtc_t   * p_ctx,
                                       uint16_t            conn_handle,

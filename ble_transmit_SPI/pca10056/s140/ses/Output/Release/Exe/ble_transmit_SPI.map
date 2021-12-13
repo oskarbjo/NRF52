@@ -11525,13 +11525,13 @@ Linker script and memory map
  .rodata.test_begin.str1.1
                 0x0000000000034050       0x14 Output/Release/Obj/ble_transmit_SPI/main.o
  .rodata.send_SPI_RX_buf.str1.1
-                0x0000000000034064       0x3f Output/Release/Obj/ble_transmit_SPI/main.o
+                0x0000000000034064       0x3e Output/Release/Obj/ble_transmit_SPI/main.o
  .rodata.main.str1.1
-                0x00000000000340a3       0x78 Output/Release/Obj/ble_transmit_SPI/main.o
+                0x00000000000340a2       0x78 Output/Release/Obj/ble_transmit_SPI/main.o
  .rodata.str1.1
-                0x000000000003411b      0x13b Output/Release/Obj/ble_transmit_SPI/main.o
+                0x000000000003411a      0x13b Output/Release/Obj/ble_transmit_SPI/main.o
                                         0x1da (size before relaxing)
- *fill*         0x0000000000034256        0x2 
+ *fill*         0x0000000000034255        0x3 
  .rodata        0x0000000000034258       0x30 Output/Release/Obj/ble_transmit_SPI/main.o
  .rodata.cli_rtt
                 0x0000000000034288        0xc Output/Release/Obj/ble_transmit_SPI/main.o

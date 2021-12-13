@@ -1351,15 +1351,15 @@ int main(void)
       idle_state_handle();
       nrf_delay_us(delay_us);
       //readAccelerometer();
-      if(newAccDataAvailable()){
-          readAccelerometer();
+      //if(newAccDataAvailable()){
+      //    readAccelerometer();
           if (is_test_ready())
           {   
               //SPI stuff
               send_SPI_RX_buf(&m_amts);
             
           }
-      }
+      //}
       j++;
     }
 }

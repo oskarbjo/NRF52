@@ -557,10 +557,8 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             // My edit: Get the pointer to the received data the length of which is p_evt->params.hvx.notif_len
             uint8_t * p_received_data = p_evt->p_rcv_data;
             if(!doPrint){
-              //Look at using serial_tx() in nrf_log_backend_uart.c instead!
-              NRF_LOG_RAW_INFO("X:%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
-              //char context;
-              //serial_tx(&context,&p_received_data, sizeof(p_received_data));
+              NRF_LOG_INFO("X:%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+
               doPrint=true;
             }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -615,7 +613,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
 static void db_disc_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
     nrf_ble_amtc_on_db_disc_evt(&m_amtc, p_evt);
-    //nrf_ble_amtc_on_db_disc_evt2(&m_amtc, p_evt);
+    nrf_ble_amtc_on_db_disc_evt2(&m_amtc, p_evt);
 }
 
 
@@ -892,7 +890,38 @@ static void client_init(void)
 
     err_code = nrf_ble_amtc_init(&m_amtc, &amtc_init);
     APP_ERROR_CHECK(err_code);
+
+
+
 }
+
+static void client_init2(void)
+{
+    ble_db_discovery_init_t db_init;
+
+    memset(&db_init, 0, sizeof(db_init));
+
+    db_init.evt_handler  = db_disc_evt_handler;
+    db_init.p_gatt_queue = &m_ble_gatt_queue;
+
+    ret_code_t err_code = ble_db_discovery_init(&db_init);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_ble_amtc_init_t amtc_init;
+
+    memset(&amtc_init, 0, sizeof(amtc_init));
+
+    amtc_init.evt_handler  = amtc_evt_handler;
+    amtc_init.p_gatt_queue = &m_ble_gatt_queue;
+
+    err_code = nrf_ble_amtc_init2(&m_amtc, &amtc_init);
+    APP_ERROR_CHECK(err_code);
+
+
+
+}
+
+
 
 
 /**@brief Function for handling Queued Write module errors.
@@ -927,6 +956,7 @@ static void server_init(void)
 {
     qwr_init();
     nrf_ble_amts_init(&m_amts, amts_evt_handler);
+    nrf_ble_amts_init2(&m_amts, amts_evt_handler);
 }
 
 
@@ -1287,6 +1317,8 @@ int main(void)
 
     server_init();
     client_init();
+    client_init2();
+
 
     gatt_mtu_set(m_test_params.att_mtu);
     conn_evt_len_ext_set(m_test_params.conn_evt_len_ext_enabled);

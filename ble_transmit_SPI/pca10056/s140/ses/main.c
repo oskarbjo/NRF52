@@ -1259,7 +1259,7 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
         NRF_LOG_ERROR("sd_ble_gatts_hvx() failed: 0x%x", err_code);
         return;
     }
-    NRF_LOG_INFO("Data successfully transmitted\n");
+    NRF_LOG_INFO("Data successfully transmitted");
 
 
 }
