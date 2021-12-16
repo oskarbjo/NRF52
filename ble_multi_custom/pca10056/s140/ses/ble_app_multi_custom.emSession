@@ -1,0 +1,57 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
+ </Breakpoints>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1/>
+ <Memory2/>
+ <Memory3/>
+ <Memory4/>
+ <Project>
+  <ProjectSessionItem path="ble_multi_custom"/>
+  <ProjectSessionItem path="ble_multi_custom;ble_multi_custom"/>
+  <ProjectSessionItem path="ble_multi_custom;ble_multi_custom;Application"/>
+  <ProjectSessionItem path="ble_multi_custom;ble_multi_custom;Board Definition"/>
+  <ProjectSessionItem path="ble_multi_custom;ble_multi_custom;nRF_BLE"/>
+  <ProjectSessionItem path="ble_multi_custom;ble_multi_custom;nRF_Drivers"/>
+ </Project>
+ <Register1/>
+ <Register2/>
+ <Register3/>
+ <Register4/>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never"/>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile windowGroup="DockEditLeft" x="27" y="566" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="main.c" selected="1" top="540" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="11449" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_multi_custom/pca10056/s140/ses/main.c" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="11423" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="93" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_peripheral/experimental/ble_app_multiperipheral/main.c" useBinaryEdit="0" left="0" path="../../../../../../../components/ble/ble_services/ble_lbs/ble_lbs.h" selected="0" top="67" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="20" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="amtc.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="46" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../../../../components/ble/ble_db_discovery/ble_db_discovery.h" selected="0" top="32" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="38" y="85" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../../../../modules/nrfx/drivers/include/nrfx_rtc.h" selected="0" top="40" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="109" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/modules/nrfx/drivers/include/nrfx_rtc.h" useBinaryEdit="0" left="0" path="../../../../../../../modules/nrfx/drivers/nrfx_common.h" selected="0" top="83" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="46" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../../../../../../modules/nrfx/drivers/src/nrfx_rtc.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="52" y="375" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_multi_custom/pca10056/s140/ses/main.c" useBinaryEdit="0" left="0" path="../../../../../../../components/ble/common/ble_conn_state.c" selected="0" top="370" codecName="Default"/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="ble_multi_custom" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Release" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/ble/ble_db_discovery" debugSearchPath="" autoConnectCapabilities="3199"/>
+</session>

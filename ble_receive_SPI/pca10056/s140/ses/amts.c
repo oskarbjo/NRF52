@@ -195,60 +195,11 @@ void nrf_ble_amts_init(nrf_ble_amts_t * p_ctx, amts_evt_handler_t evt_handler)
 
     err_code = characteristic_add(service_handle, &amt_rbc_params, &(p_ctx->amt_rbc_char_handles));
     APP_ERROR_CHECK(err_code);
-    
 
 
     p_ctx->evt_handler = evt_handler;
 }
 
-void nrf_ble_amts_init2(nrf_ble_amts_t * p_ctx, amts_evt_handler_t evt_handler)
-{
-    ret_code_t    err_code;
-    uint16_t      service_handle;
-    ble_uuid_t    ble_uuid;
-    ble_uuid128_t base_uuid = {SERVICE_UUID_BASE2};
-
-    err_code = sd_ble_uuid_vs_add(&base_uuid, &(p_ctx->uuid_type));
-    APP_ERROR_CHECK(err_code);
-
-    ble_uuid.type = p_ctx->uuid_type;
-    ble_uuid.uuid = AMT_SERVICE_UUID2;
-
-    // Add service.
-    err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &ble_uuid, &service_handle);
-    APP_ERROR_CHECK(err_code);
-
-    // Add AMTS characteristic.
-    ble_add_char_params_t amt_params;
-    memset(&amt_params, 0, sizeof(amt_params));
-
-    amt_params.uuid              = AMTS_CHAR_UUID2;
-    amt_params.uuid_type         = p_ctx->uuid_type;
-    amt_params.max_len           = NRF_SDH_BLE_GATT_MAX_MTU_SIZE;
-    amt_params.char_props.notify = 1;
-    amt_params.cccd_write_access = SEC_OPEN;
-    amt_params.is_var_len        = 1;
-
-    err_code = characteristic_add(service_handle, &amt_params, &(p_ctx->amts_char_handles));
-    APP_ERROR_CHECK(err_code);
-
-    // Add AMT Received Bytes Count characteristic.
-    ble_add_char_params_t amt_rbc_params;
-    memset(&amt_rbc_params, 0, sizeof(amt_rbc_params));
-
-    amt_rbc_params.uuid            = AMT_RCV_BYTES_CNT_CHAR_UUID2;
-    amt_rbc_params.uuid_type       = p_ctx->uuid_type;
-    amt_rbc_params.max_len         = AMT_RCV_BYTES_CNT_MAX_LEN;
-    amt_rbc_params.char_props.read = 1;
-    amt_rbc_params.read_access     = SEC_OPEN;
-
-    err_code = characteristic_add(service_handle, &amt_rbc_params, &(p_ctx->amt_rbc_char_handles));
-    APP_ERROR_CHECK(err_code);
-    
-
-
-    p_ctx->evt_handler = evt_handler;
-}
 
 
 

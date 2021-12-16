@@ -114,7 +114,6 @@ static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];                    
 static const nrf_drv_spi_t spi = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
 static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
-//#define TEST_STRING "1"
 //char TEST_STRING[] = {0x00,0x01};
 const char CTRL1_XL = 0b00010000;
 const char CTRL1_XL_SETTINGS = 0b01000000;
@@ -177,18 +176,21 @@ typedef struct
 } test_params_t;
 
 
+static void scan_start(void);
+
 NRF_BLE_GQ_DEF(m_ble_gatt_queue,                /**< BLE GATT Queue instance. */
                NRF_SDH_BLE_CENTRAL_LINK_COUNT,
                NRF_BLE_GQ_QUEUE_SIZE);
 NRF_BLE_GATT_DEF(m_gatt);                       /**< GATT module instance. */
-NRF_BLE_QWR_DEF(m_qwr);                         /**< Context for the Queued Write module.*/
+NRF_BLE_QWRS_DEF(m_qwr,NRF_SDH_BLE_TOTAL_LINK_COUNT);                         /**< Context for the Queued Write module.*/
 BLE_DB_DISCOVERY_DEF(m_ble_db_discovery);       /**< Database discovery module instance. */
 NRF_BLE_SCAN_DEF(m_scan);                       /**< Scanning Module instance. */
 
 static nrf_ble_amtc_t     m_amtc;
-static nrf_ble_amts_t     m_amts;
+//static nrf_ble_amts_t     m_amts;
 NRF_SDH_BLE_OBSERVER(m_amtc_ble_obs, BLE_AMTC_BLE_OBSERVER_PRIO, nrf_ble_amtc_on_ble_evt, &m_amtc);
-NRF_SDH_BLE_OBSERVER(m_amts_ble_obs, BLE_AMTS_BLE_OBSERVER_PRIO, nrf_ble_amts_on_ble_evt, &m_amts);
+//NRF_SDH_BLE_OBSERVER(m_amtc_ble_obs1, BLE_AMTC_BLE_OBSERVER_PRIO, nrf_ble_amtc_on_ble_evt, &m_amtc[1]);
+//NRF_SDH_BLE_OBSERVER(m_amts_ble_obs, BLE_AMTS_BLE_OBSERVER_PRIO, nrf_ble_amts_on_ble_evt, &m_amts);
 
 NRF_CLI_UART_DEF(cli_uart, 0, 64, 16);
 NRF_CLI_RTT_DEF(cli_rtt);
@@ -305,26 +307,43 @@ static void on_ble_gap_evt_connected(ble_gap_evt_t const * p_gap_evt)
 
     // DISABLING SCANNING MAKES IT IMPOSSIBLE TO CONNECT TO MULTIPLE DEVICES. COMMENT OUT TO ENABLE MULTICONNECTION
     // Stop scanning and advertising.
-    //nrf_ble_scan_stop();
+    nrf_ble_scan_stop();
     //(void) sd_ble_gap_adv_stop(m_adv_handle);
 
     bsp_board_leds_off();
 
-    // Assign connection handle to the Queued Write module.
-    err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
-    APP_ERROR_CHECK(err_code);
-
+    // Assign connection handle to available instance of QWR module.
+    uint32_t i = 0;
+    for (i; i < NRF_SDH_BLE_PERIPHERAL_LINK_COUNT; i++)
+    {
+        if (m_qwr[i].conn_handle == BLE_CONN_HANDLE_INVALID)
+        {
+            NRF_LOG_INFO("Assigning m_qwr handle");
+            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr[i], p_gap_evt->conn_handle);
+            APP_ERROR_CHECK(err_code);
+            break;
+        }
+        NRF_LOG_INFO("m_qwr length: %d",i);
+    }
     NRF_LOG_INFO("Discovering GATT database...");
     err_code  = ble_db_discovery_start(&m_ble_db_discovery, p_gap_evt->conn_handle);
+    NRF_LOG_DEBUG(err_code);
     APP_ERROR_CHECK(err_code);
 
-    if (m_gap_role == BLE_GAP_ROLE_PERIPH)
-    {
-        NRF_LOG_INFO("Sending PHY Update, %s.", phy_str(m_test_params.phys));
+    uint32_t    periph_link_cnt = ble_conn_state_central_conn_count();
+    //NRF_LOG_INFO("Number of connections: %d",periph_link_cnt);
 
-        err_code = sd_ble_gap_phy_update(p_gap_evt->conn_handle, &m_test_params.phys);
-        APP_ERROR_CHECK(err_code);
-    }
+    if(i<NRF_SDH_BLE_TOTAL_LINK_COUNT-1){scan_start();}
+
+
+
+    //if (m_gap_role == BLE_GAP_ROLE_PERIPH)
+    //{
+    //    NRF_LOG_INFO("Sending PHY Update, %s.", phy_str(m_test_params.phys));
+
+    //    err_code = sd_ble_gap_phy_update(p_gap_evt->conn_handle, &m_test_params.phys);
+    //    APP_ERROR_CHECK(err_code);
+    //}
 }
 
 
@@ -439,83 +458,83 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 
 /**@brief AMT server event handler. */
-static void amts_evt_handler(nrf_ble_amts_evt_t evt)
-{
-    ret_code_t err_code;
+//static void amts_evt_handler(nrf_ble_amts_evt_t evt)
+//{
+//    ret_code_t err_code;
 
-    switch (evt.evt_type)
-    {
-        case NRF_BLE_AMTS_EVT_NOTIF_ENABLED:
-        {
-            NRF_LOG_INFO("Notifications enabled.");
+//    switch (evt.evt_type)
+//    {
+//        case NRF_BLE_AMTS_EVT_NOTIF_ENABLED:
+//        {
+//            NRF_LOG_INFO("Notifications enabled.");
 
-            bsp_board_led_on(READY_LED);
-            m_notif_enabled = true;
+//            bsp_board_led_on(READY_LED);
+//            m_notif_enabled = true;
 
-            if (m_board_role != BOARD_TESTER)
-            {
-                return;
-            }
+//            if (m_board_role != BOARD_TESTER)
+//            {
+//                return;
+//            }
 
-            if (m_test_params.conn_interval != CONN_INTERVAL_DEFAULT)
-            {
-                NRF_LOG_DEBUG("Updating connection parameters..");
-                m_conn_param.min_conn_interval = m_test_params.conn_interval;
-                m_conn_param.max_conn_interval = m_test_params.conn_interval;
-                err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_conn_param);
+//            if (m_test_params.conn_interval != CONN_INTERVAL_DEFAULT)
+//            {
+//                NRF_LOG_DEBUG("Updating connection parameters..");
+//                m_conn_param.min_conn_interval = m_test_params.conn_interval;
+//                m_conn_param.max_conn_interval = m_test_params.conn_interval;
+//                err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_conn_param);
 
-                if (err_code != NRF_SUCCESS)
-                {
-                    NRF_LOG_ERROR("sd_ble_gap_conn_param_update() failed: 0x%x.", err_code);
-                }
-            }
-            else
-            {
-                m_conn_interval_configured = true;
-            }
-        } break;
+//                if (err_code != NRF_SUCCESS)
+//                {
+//                    NRF_LOG_ERROR("sd_ble_gap_conn_param_update() failed: 0x%x.", err_code);
+//                }
+//            }
+//            else
+//            {
+//                m_conn_interval_configured = true;
+//            }
+//        } break;
 
-        case NRF_BLE_AMTS_EVT_NOTIF_DISABLED:
-        {
-            NRF_LOG_INFO("Notifications disabled.");
-            bsp_board_led_off(READY_LED);
-        } break;
+//        case NRF_BLE_AMTS_EVT_NOTIF_DISABLED:
+//        {
+//            NRF_LOG_INFO("Notifications disabled.");
+//            bsp_board_led_off(READY_LED);
+//        } break;
 
-        case NRF_BLE_AMTS_EVT_TRANSFER_1KB:
-        {
-            NRF_LOG_INFO("Sent %u KBytes", (evt.bytes_transfered_cnt / 1024));
-            bsp_board_led_invert(PROGRESS_LED);
-        } break;
+//        case NRF_BLE_AMTS_EVT_TRANSFER_1KB:
+//        {
+//            NRF_LOG_INFO("Sent %u KBytes", (evt.bytes_transfered_cnt / 1024));
+//            bsp_board_led_invert(PROGRESS_LED);
+//        } break;
 
-        case NRF_BLE_AMTS_EVT_TRANSFER_FINISHED:
-        {
-            counter_stop();
+//        case NRF_BLE_AMTS_EVT_TRANSFER_FINISHED:
+//        {
+//            counter_stop();
 
-            bsp_board_led_off(PROGRESS_LED);
-            bsp_board_led_on(DONE_LED);
+//            bsp_board_led_off(PROGRESS_LED);
+//            bsp_board_led_on(DONE_LED);
 
-            uint32_t time_ms      = counter_get();
-            uint32_t bit_count    = (evt.bytes_transfered_cnt * 8);
-            float throughput_kbps = ((bit_count / (time_ms / 1000.f)) / 1000.f);
+//            uint32_t time_ms      = counter_get();
+//            uint32_t bit_count    = (evt.bytes_transfered_cnt * 8);
+//            float throughput_kbps = ((bit_count / (time_ms / 1000.f)) / 1000.f);
 
-            NRF_LOG_INFO("Done.");
-            NRF_LOG_INFO("=============================");
-            NRF_LOG_INFO("Time: %u.%.2u seconds elapsed.", (time_ms / 1000), (time_ms % 1000));
-            NRF_LOG_INFO("Throughput: " NRF_LOG_FLOAT_MARKER " Kbps.",
-                         NRF_LOG_FLOAT(throughput_kbps));
-            NRF_LOG_INFO("=============================");
-            NRF_LOG_INFO("Sent %u bytes of ATT payload.", evt.bytes_transfered_cnt);
-            NRF_LOG_INFO("Retrieving amount of bytes received from peer...");
+//            NRF_LOG_INFO("Done.");
+//            NRF_LOG_INFO("=============================");
+//            NRF_LOG_INFO("Time: %u.%.2u seconds elapsed.", (time_ms / 1000), (time_ms % 1000));
+//            NRF_LOG_INFO("Throughput: " NRF_LOG_FLOAT_MARKER " Kbps.",
+//                         NRF_LOG_FLOAT(throughput_kbps));
+//            NRF_LOG_INFO("=============================");
+//            NRF_LOG_INFO("Sent %u bytes of ATT payload.", evt.bytes_transfered_cnt);
+//            NRF_LOG_INFO("Retrieving amount of bytes received from peer...");
 
-            err_code = nrf_ble_amtc_rcb_read(&m_amtc);
-            if (err_code != NRF_SUCCESS)
-            {
-                NRF_LOG_ERROR("nrf_ble_amtc_rcb_read() failed: 0x%x.", err_code);
-                test_terminate();
-            }
-        } break;
-    }
-}
+//            err_code = nrf_ble_amtc_rcb_read(&m_amtc);
+//            if (err_code != NRF_SUCCESS)
+//            {
+//                NRF_LOG_ERROR("nrf_ble_amtc_rcb_read() failed: 0x%x.", err_code);
+//                test_terminate();
+//            }
+//        } break;
+//    }
+//}
 
 
 /**@brief AMT Client event handler.  */
@@ -523,6 +542,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
 {
     ret_code_t err_code;
     volatile bool doPrint = false;
+    //NRF_LOG_INFO("AMTC event triggered, conn_handle: %d",p_evt->conn_handle);
     switch (p_evt->evt_type)
     {
         case NRF_BLE_AMT_C_EVT_DISCOVERY_COMPLETE:
@@ -556,14 +576,17 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // My edit: Get the pointer to the received data the length of which is p_evt->params.hvx.notif_len
             uint8_t * p_received_data = p_evt->p_rcv_data;
-            if(!doPrint){
-              NRF_LOG_INFO("X:%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
-
-              doPrint=true;
-            }
+            m_qwr;
+            //maybe replace this with function like is_part_of_connection_handles(p_gap_evt->conn_handle)
+              if(!doPrint){
+                    //NRF_LOG_INFO ("Connection handle: %d",p_evt->conn_handle);
+                    //NRF_LOG_INFO("Number of connections: %d",ble_conn_state_central_conn_count());
+                    NRF_LOG_INFO("%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+                    doPrint=true;
+                }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+            
             if (bytes_cnt > 1024)
             {
                 bsp_board_led_invert(PROGRESS_LED);
@@ -571,9 +594,9 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
                 bytes_cnt -= 1024;
                 kbytes_cnt++;
 
-                NRF_LOG_INFO("Received %u kbytes", kbytes_cnt);
+                //NRF_LOG_INFO("Received %u kbytes", kbytes_cnt);
 
-                nrf_ble_amts_rbc_set(&m_amts, p_evt->params.hvx.bytes_rcvd);
+                //nrf_ble_amts_rbc_set(&m_amts, p_evt->params.hvx.bytes_rcvd);
             }
 
             //if (p_evt->params.hvx.bytes_rcvd >= AMT_BYTE_TRANSFER_CNT)
@@ -586,7 +609,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             //    //NRF_LOG_INFO("Transfer complete, received %u bytes of ATT payload.",
             //                 p_evt->params.hvx.bytes_rcvd);
 
-            //    nrf_ble_amts_rbc_set(&m_amts, p_evt->params.hvx.bytes_rcvd);
+                //nrf_ble_amts_rbc_set(&m_amts, p_evt->params.hvx.bytes_rcvd);
             //}
         } break;
 
@@ -613,7 +636,6 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
 static void db_disc_evt_handler(ble_db_discovery_evt_t * p_evt)
 {
     nrf_ble_amtc_on_db_disc_evt(&m_amtc, p_evt);
-    nrf_ble_amtc_on_db_disc_evt2(&m_amtc, p_evt);
 }
 
 
@@ -627,6 +649,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
             m_mtu_exchanged = true;
             NRF_LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.",
                          p_evt->params.att_mtu_effective);
+            
         } break;
 
         case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
@@ -636,7 +659,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
         } break;
     }
 
-    nrf_ble_amts_on_gatt_evt(&m_amts, p_evt);
+    //nrf_ble_amts_on_gatt_evt(&m_amts, p_evt);
 }
 
 
@@ -657,7 +680,7 @@ static void advertising_data_set(void)
         .duration      = 0,
 
         .primary_phy   = BLE_GAP_PHY_1MBPS, // Must be changed to connect in long range. (BLE_GAP_PHY_CODED)
-        .secondary_phy = BLE_GAP_PHY_1MBPS,
+        .secondary_phy = BLE_GAP_PHY_2MBPS,
     };
 
     ble_advdata_t const adv_data =
@@ -676,17 +699,17 @@ static void advertising_data_set(void)
 
 
 /**@brief Function for starting advertising. */
-static void advertising_start(void)
-{
-    NRF_LOG_INFO("Starting advertising.");
+//static void advertising_start(void)
+//{
+//    NRF_LOG_INFO("Starting advertising.");
 
-    bsp_board_led_on(SCAN_ADV_LED);
+//    bsp_board_led_on(SCAN_ADV_LED);
 
-    UNUSED_RETURN_VALUE(sd_ble_gap_adv_stop(m_adv_handle));
+//    UNUSED_RETURN_VALUE(sd_ble_gap_adv_stop(m_adv_handle));
 
-    ret_code_t err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
-    APP_ERROR_CHECK(err_code);
-}
+//    ret_code_t err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
+//    APP_ERROR_CHECK(err_code);
+//}
 
 
 /**@brief Function for handling Scanning Module events.
@@ -698,7 +721,7 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
                    p_scan_evt->params.filter_match.p_adv_report;
     ble_gap_scan_params_t    const * p_scan_param = 
                    p_scan_evt->p_scan_params;
-
+    //NRF_LOG_INFO("Scan event triggered");
     switch(p_scan_evt->scan_evt_id)
     {
         case NRF_BLE_SCAN_EVT_FILTER_MATCH:
@@ -707,11 +730,11 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
              (uint32_t) m_target_periph_name);
 
             // Stop advertising.
-            err_code = sd_ble_gap_adv_stop(m_adv_handle);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
+            //err_code = sd_ble_gap_adv_stop(m_adv_handle);
+            //if (err_code != NRF_ERROR_INVALID_STATE)
+            //{
+            //    APP_ERROR_CHECK(err_code);
+            //}
 
             // Initiate connection.
             m_conn_param.min_conn_interval = CONN_INTERVAL_DEFAULT;
@@ -842,7 +865,7 @@ static void button_evt_handler(uint8_t pin_no, uint8_t button_action)
                 data_len_set(DATA_LENGTH_MAX);
             }
 
-            advertising_start();
+            //advertising_start();
             scan_start();
         } break;
 
@@ -881,10 +904,9 @@ static void client_init(void)
     ret_code_t err_code = ble_db_discovery_init(&db_init);
     APP_ERROR_CHECK(err_code);
 
+    /////
     nrf_ble_amtc_init_t amtc_init;
-
     memset(&amtc_init, 0, sizeof(amtc_init));
-
     amtc_init.evt_handler  = amtc_evt_handler;
     amtc_init.p_gatt_queue = &m_ble_gatt_queue;
 
@@ -893,33 +915,12 @@ static void client_init(void)
 
 
 
-}
-
-static void client_init2(void)
-{
-    ble_db_discovery_init_t db_init;
-
-    memset(&db_init, 0, sizeof(db_init));
-
-    db_init.evt_handler  = db_disc_evt_handler;
-    db_init.p_gatt_queue = &m_ble_gatt_queue;
-
-    ret_code_t err_code = ble_db_discovery_init(&db_init);
-    APP_ERROR_CHECK(err_code);
-
-    nrf_ble_amtc_init_t amtc_init;
-
-    memset(&amtc_init, 0, sizeof(amtc_init));
-
-    amtc_init.evt_handler  = amtc_evt_handler;
-    amtc_init.p_gatt_queue = &m_ble_gatt_queue;
-
-    err_code = nrf_ble_amtc_init2(&m_amtc, &amtc_init);
-    APP_ERROR_CHECK(err_code);
 
 
 
 }
+
+
 
 
 
@@ -942,22 +943,22 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 static void qwr_init(void)
 {
     ret_code_t         err_code;
-    nrf_ble_qwr_init_t qwr_init_obj = {0};
+    nrf_ble_qwr_init_t qwr_init = {0};
 
-    // Initialize Queued Write Module.
-    qwr_init_obj.error_handler = nrf_qwr_error_handler;
+    // Initialize Queued Write Module instances.
+    qwr_init.error_handler = nrf_qwr_error_handler;
 
-    err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init_obj);
-    APP_ERROR_CHECK(err_code);
+    for (uint32_t i = 0; i < NRF_SDH_BLE_TOTAL_LINK_COUNT; i++)
+    {
+        err_code = nrf_ble_qwr_init(&m_qwr[i], &qwr_init);
+        APP_ERROR_CHECK(err_code);
+        NRF_LOG_ERROR(err_code);
+        NRF_LOG_INFO("Init of m_qwr %d",i);
+    }
 }
 
 
-static void server_init(void)
-{
-    qwr_init();
-    nrf_ble_amts_init(&m_amts, amts_evt_handler);
-    nrf_ble_amts_init2(&m_amts, amts_evt_handler);
-}
+
 
 
 /**@brief Function for initializing the BLE stack.
@@ -1122,12 +1123,12 @@ void test_begin(void)
         default:
             // If no connection was established, the role is not established either.
             // In this case, start both the advertising and the scanning.
-            advertising_start();
+            //advertising_start();
             scan_start();
             break;
 
         case BLE_GAP_ROLE_PERIPH:
-            advertising_start();
+            //advertising_start();
             m_test_params.phys.tx_phys = BLE_GAP_PHY_2MBPS;
             break;
 
@@ -1141,7 +1142,7 @@ void test_begin(void)
 static void test_run(void)
 {
     counter_start();
-    nrf_ble_amts_notif_spam(&m_amts);
+    //nrf_ble_amts_notif_spam(&m_amts);
 }
 
 
@@ -1152,7 +1153,6 @@ static bool is_test_ready()
             && m_notif_enabled
             && m_mtu_exchanged
             && (m_data_length_updated || m_test_params.data_len == DATA_LENGTH_DEFAULT)
-            && m_phy_updated
             && !m_run_test);
 }
 
@@ -1212,7 +1212,7 @@ static void test_terminate(void)
         {
             if (m_gap_role == BLE_GAP_ROLE_PERIPH)
             {
-                advertising_start();
+                //advertising_start();
             }
             else
             {
@@ -1242,6 +1242,7 @@ void cli_init(void)
 
 void cli_start(void)
 {
+
     ret_code_t err_code =  nrf_cli_start(&m_cli_uart);
     APP_ERROR_CHECK(err_code);
 }
@@ -1251,50 +1252,8 @@ void spi_event_handler(nrf_drv_spi_evt_t const * p_event,
                        void *                    p_context)
 {
     spi_xfer_done = true;
-    //NRF_LOG_INFO("Transfer completed.");
-    //if (m_rx_buf[0] != 0)
-    //{
-    //    NRF_LOG_INFO(" Received:");
-    //    NRF_LOG_HEXDUMP_INFO(m_rx_buf, strlen((const char *)m_rx_buf));
-    //}
 }
 
-void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
-
-
-    char *data = output_buffer;
-    //for(int kk=0;kk<sizeof(data);kk++){
-    //  NRF_LOG_INFO("Data sent %d: %d",kk,data[kk]);
-    //}
-    //uint16_t           payload_len = p_ctx->max_payload_len;
-    uint16_t payload_len = 6;
-    nrf_ble_amts_evt_t evt;
-
-    ble_gatts_hvx_params_t const hvx_param =
-    {
-        .type   = BLE_GATT_HVX_NOTIFICATION,
-        .handle = p_ctx->amts_char_handles.value_handle,
-        .p_data = data,
-        .p_len  = &payload_len,
-    };
-
-    uint32_t err_code = NRF_SUCCESS;
-
-    //NRF_LOG_INFO("Sending data...");
-    err_code = sd_ble_gatts_hvx(p_ctx->conn_handle, &hvx_param);
-
-    if (err_code == NRF_ERROR_RESOURCES)
-    {
-        // Wait for BLE_GATTS_EVT_HVN_TX_COMPLETE.
-        p_ctx->busy = true;
-    }
-    else if (err_code != NRF_SUCCESS)
-    {
-        NRF_LOG_ERROR("sd_ble_gatts_hvx() failed: 0x%x", err_code);
-    }
-
-
-}
 
 
 
@@ -1315,9 +1274,8 @@ int main(void)
     advertising_data_set();
     scan_init();
 
-    server_init();
+    qwr_init();
     client_init();
-    client_init2();
 
 
     gatt_mtu_set(m_test_params.att_mtu);

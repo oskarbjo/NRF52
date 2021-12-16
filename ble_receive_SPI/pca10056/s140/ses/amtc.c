@@ -66,10 +66,10 @@ NRF_LOG_MODULE_REGISTER();
 static void on_hvx(nrf_ble_amtc_t * p_ctx, ble_evt_t const * p_ble_evt)
 {
     // Check if the event if on the link for this instance
-    if (p_ctx->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
-    {
-        return;
-    }
+    //if (p_ctx->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)//This check makes multiconnection impossible
+    //{
+    //    return;
+    //}
 
     // Check if this is a AMT notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ctx->peer_db.amt_handle)
@@ -81,8 +81,6 @@ static void on_hvx(nrf_ble_amtc_t * p_ctx, ble_evt_t const * p_ble_evt)
         amt_c_evt.conn_handle           = p_ble_evt->evt.gattc_evt.conn_handle;
         amt_c_evt.params.hvx.notif_len  = p_ble_evt->evt.gattc_evt.params.hvx.len;
         amt_c_evt.p_rcv_data            = p_ble_evt->evt.gattc_evt.params.hvx.data; // LVI: pointer to pass the received data to event handler
-        //amt_c_evt.params.hvx.bytes_sent = uint32_decode(p_ble_evt->evt.gattc_evt.params.hvx.data);
-        //NRF_LOG_INFO(amt_c_evt.params.hvx.bytes_sent);
         p_ctx->evt_handler(p_ctx, &amt_c_evt);
     }
 }
@@ -201,65 +199,6 @@ void nrf_ble_amtc_on_db_disc_evt(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t 
 }
 
 
-void nrf_ble_amtc_on_db_disc_evt2(nrf_ble_amtc_t * p_ctx, ble_db_discovery_evt_t const * p_evt)
-{
-    // Check if the AMT service was discovered.
-    if (   (p_evt->evt_type != BLE_DB_DISCOVERY_COMPLETE)
-        || (p_evt->params.discovered_db.srv_uuid.uuid != AMT_SERVICE_UUID2)
-        || (p_evt->params.discovered_db.srv_uuid.type != p_ctx->uuid_type))
-    {
-        return;
-    }
-    
-
-
-    nrf_ble_amtc_evt_t evt;
-    evt.conn_handle = p_evt->conn_handle;
-
-    // Find the CCCD Handle of the AMT characteristic.
-    for (uint32_t i = 0; i < p_evt->params.discovered_db.char_count; i++)
-    {
-        ble_uuid_t uuid = p_evt->params.discovered_db.charateristics[i].characteristic.uuid;
-
-        if ((uuid.uuid == AMTS_CHAR_UUID2) && (uuid.type == p_ctx->uuid_type))
-        {
-            // Found AMT characteristic. Store handles.
-            evt.params.peer_db.amt_cccd_handle =
-                p_evt->params.discovered_db.charateristics[i].cccd_handle;
-            evt.params.peer_db.amt_handle =
-                p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
-        }
-
-
-        if ((uuid.uuid == AMT_RCV_BYTES_CNT_CHAR_UUID2) && (uuid.type == p_ctx->uuid_type))
-        {
-            // Found AMT Number of received bytes characteristic. Store handles.
-            evt.params.peer_db.amt_rbc_handle =
-                p_evt->params.discovered_db.charateristics[i].characteristic.handle_value;
-        }
-        
-
-    }
-
-    NRF_LOG_DEBUG("AMT service discovered at peer.");
-
-    //If the instance has been assigned prior to db_discovery, assign the db_handles.
-    if (p_ctx->conn_handle != BLE_CONN_HANDLE_INVALID)
-    {
-        if (   (p_ctx->peer_db.amt_cccd_handle == BLE_GATT_HANDLE_INVALID)
-            && (p_ctx->peer_db.amt_handle == BLE_GATT_HANDLE_INVALID))
-        {
-            p_ctx->peer_db = evt.params.peer_db;
-        }
-    }
-
-    p_ctx->bytes_rcvd_cnt = 0;
-
-    evt.evt_type = NRF_BLE_AMT_C_EVT_DISCOVERY_COMPLETE;
-    p_ctx->evt_handler(p_ctx, &evt);
-
-}
-
 
 ret_code_t nrf_ble_amtc_init(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amtc_init)
 {
@@ -276,34 +215,6 @@ ret_code_t nrf_ble_amtc_init(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amt
 
     amt_uuid.type = p_ctx->uuid_type;
     amt_uuid.uuid = AMT_SERVICE_UUID;
-
-    p_ctx->evt_handler             = p_amtc_init->evt_handler;
-    p_ctx->p_gatt_queue            = p_amtc_init->p_gatt_queue;
-    p_ctx->bytes_rcvd_cnt          = 0;
-    p_ctx->conn_handle             = BLE_CONN_HANDLE_INVALID;
-    p_ctx->peer_db.amt_cccd_handle = BLE_GATT_HANDLE_INVALID;
-    p_ctx->peer_db.amt_handle      = BLE_GATT_HANDLE_INVALID;
-    p_ctx->conn_handle             = BLE_CONN_HANDLE_INVALID;
-    p_ctx->peer_db.amt_rbc_handle  = BLE_GATT_HANDLE_INVALID;
-
-    return ble_db_discovery_evt_register(&amt_uuid);
-}
-
-ret_code_t nrf_ble_amtc_init2(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amtc_init)
-{
-    VERIFY_PARAM_NOT_NULL(p_ctx);
-    VERIFY_PARAM_NOT_NULL(p_amtc_init);
-    VERIFY_PARAM_NOT_NULL(p_amtc_init->p_gatt_queue);
-    VERIFY_PARAM_NOT_NULL(p_amtc_init->evt_handler);
-
-    ble_uuid128_t base_uuid = {SERVICE_UUID_BASE2};
-    ble_uuid_t    amt_uuid;
-
-    ret_code_t err_code = sd_ble_uuid_vs_add(&base_uuid, &p_ctx->uuid_type);
-    VERIFY_SUCCESS(err_code);
-
-    amt_uuid.type = p_ctx->uuid_type;
-    amt_uuid.uuid = AMT_SERVICE_UUID2;
 
     p_ctx->evt_handler             = p_amtc_init->evt_handler;
     p_ctx->p_gatt_queue            = p_amtc_init->p_gatt_queue;
@@ -390,6 +301,41 @@ void nrf_ble_amtc_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
             break;
     }
 }
+
+
+void nrf_ble_amtc_on_ble_evt1(ble_evt_t const * p_ble_evt, void * p_context)
+{
+    nrf_ble_amtc_t * p_ctx = (nrf_ble_amtc_t *)p_context;
+
+    if ((p_ctx == NULL) || (p_ble_evt == NULL))
+    {
+        return;
+    }
+
+    switch (p_ble_evt->header.evt_id)
+    {
+        case BLE_GATTC_EVT_HVX:
+            on_hvx(p_ctx, p_ble_evt);
+            break;
+
+        case BLE_GAP_EVT_DISCONNECTED:
+            on_disconnected(p_ctx, p_ble_evt);
+            break;
+
+        case BLE_GATTC_EVT_WRITE_RSP:
+            on_write_response(p_ctx, p_ble_evt);
+            break;
+
+        case BLE_GATTC_EVT_READ_RSP:
+            on_read_response(p_ctx, p_ble_evt);
+            break;
+
+        default:
+            break;
+    }
+}
+
+
 
 
 /**@brief Function for creating a message for writing to the CCCD.

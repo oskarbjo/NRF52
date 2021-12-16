@@ -308,6 +308,7 @@ typedef struct
 {
     uint16_t                 conn_handle;            //!< Connection handle as provided by the SoftDevice. */
     uint8_t                  uuid_type;              //!< UUID type. */
+    nrf_ble_amtc_db_t        peer_db;          //!<  Handles on the peer. */
     ble_gatts_char_handles_t amts_char_handles;      //!< AMT characteristic handles. */
     ble_gatts_char_handles_t amt_rbc_char_handles;   //!< Received Bytes Count Characteristic handles. */
     ble_gatts_char_handles_t amt_data_char_handles;  //!< MY EDIT!! Data received characteristic

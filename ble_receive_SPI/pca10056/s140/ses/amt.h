@@ -157,6 +157,7 @@ typedef struct nrf_ble_amtc_t
     uint16_t                     conn_handle;      //!<  Connection handle as provided by the SoftDevice. */
     nrf_ble_amtc_db_t            peer_db;          //!<  Handles on the peer. */
     nrf_ble_amtc_evt_handler_t   evt_handler;      //!<  Application event handler to be called when there is an event related to this AMT Client Module. */
+    ble_gatts_char_handles_t     amtc_char_handles;
     uint8_t                      uuid_type;        //!<  UUID type. */
     uint32_t                     bytes_rcvd_cnt;   //!<  Number of bytes received.*/
     nrf_ble_gq_t               * p_gatt_queue;     //!<  Pointer to the BLE GATT Queue instance. */
@@ -197,6 +198,7 @@ ret_code_t nrf_ble_amtc_init(nrf_ble_amtc_t * p_ctx, nrf_ble_amtc_init_t * p_amt
  * @param[in] p_context     Pointer to the AMT client structure.
  */
 void nrf_ble_amtc_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context);
+void nrf_ble_amtc_on_ble_evt1(ble_evt_t const * p_ble_evt, void * p_context);
 
 
 /**@brief   Function for enabling CCCD on the peer.
@@ -317,6 +319,7 @@ typedef struct
     uint32_t                 kbytes_sent;            //!< Number of kilobytes sent. */
     uint32_t                 bytes_sent;             //!< Number of bytes sent. */
 } nrf_ble_amts_t;
+
 
 
 

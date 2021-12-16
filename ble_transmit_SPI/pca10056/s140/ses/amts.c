@@ -59,6 +59,7 @@ NRF_LOG_MODULE_REGISTER();
 static void char_notification_send(nrf_ble_amts_t * p_ctx);
 
 
+
 /**@brief Function for handling the Connect event.
  *
  * @param     p_ctx       Pointer to the AMTS structure.
@@ -85,14 +86,7 @@ static void on_disconnect(nrf_ble_amts_t * p_ctx, ble_evt_t const * p_ble_evt)
  *
  * @param   p_ctx   Pointer to the AMTS structure.
  */
-static void on_tx_complete(nrf_ble_amts_t * p_ctx)
-{
-    if (p_ctx->busy)
-    {
-        p_ctx->busy = false;
-        char_notification_send(p_ctx);
-    }
-}
+
 
 
 /**@brief Function for handling the Write event.
@@ -145,11 +139,15 @@ void nrf_ble_amts_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
             //on_tx_complete(p_ctx);
             //NRF_LOG_INFO("Transmitted one round");
             break;
+        case BLE_GATTC_EVT_HVX:
+          //on_hvx_AMTS(p_ctx, p_ble_evt);
+          break;
 
         default:
             break;
     }
 }
+
 
 
 void nrf_ble_amts_init(nrf_ble_amts_t * p_ctx, amts_evt_handler_t evt_handler)
@@ -270,20 +268,6 @@ static void char_notification_send(nrf_ble_amts_t * p_ctx)
     {
         NRF_LOG_ERROR("sd_ble_gatts_hvx() failed: 0x%x", err_code);
     }
-
-    //p_ctx->bytes_sent += payload_len;
-    //NRF_LOG_INFO("Payload length: %d", payload_len); //my edit
-    //NRF_LOG_INFO("p_ctx->bytes_sent: %d", p_ctx->bytes_sent); //my edit
-
-
-    //if (p_ctx->kbytes_sent != (p_ctx->bytes_sent / 1024))
-    //{
-    //    p_ctx->kbytes_sent = (p_ctx->bytes_sent / 1024);
-
-    //    evt.evt_type             = NRF_BLE_AMTS_EVT_TRANSFER_1KB;
-    //    evt.bytes_transfered_cnt = p_ctx->bytes_sent;
-    //    p_ctx->evt_handler(evt);
-    //}
     
 }
 
