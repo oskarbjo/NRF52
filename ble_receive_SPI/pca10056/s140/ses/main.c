@@ -45,6 +45,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #include "amt.h"
 #include "counter.h"
@@ -83,6 +84,20 @@
 #include "nrf_drv_spi.h"
 #include "nrfx_spi.h"
 
+#include "nrf_drv_usbd.h"
+#include "nrf_drv_clock.h"
+#include "nrf_drv_power.h"
+
+#include "app_util.h"
+#include "app_usbd_core.h"
+#include "app_usbd.h"
+#include "app_usbd_string_desc.h"
+#include "app_usbd_cdc_acm.h"
+#include "app_usbd_serial_num.h"
+
+
+
+
 
 #define DATA_LENGTH_DEFAULT             27                                              /**< The stack default data length. */
 #define DATA_LENGTH_MAX                 251                                             /**< The stack maximum data length. */
@@ -106,40 +121,18 @@
 #define APP_BLE_CONN_CFG_TAG            1                                               /**< Tag that refers to the BLE stack configuration. */
 #define APP_BLE_OBSERVER_PRIO           3                                               /**< BLE observer priority of the application. There is no need to modify this value. */
 
+
+#if APP_USBD_CONFIG_EVENT_QUEUE_ENABLE
+#include "nrf_atfifo.h"
+#include "nrf_atomic.h"
+#endif
+
+
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                           /**< Advertising handle used to identify an advertising set. */
 static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];                            /**< Buffer for storing an encoded advertising set. */
 
-//SPI related:
-#define SPI_INSTANCE  0 /**< SPI instance index. */
-static const nrf_drv_spi_t spi = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
-static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instance completed the transfer. */
-
-//char TEST_STRING[] = {0x00,0x01};
-const char CTRL1_XL = 0b00010000;
-const char CTRL1_XL_SETTINGS = 0b01000000;
-
-const char OUTX_H_A = 0b10101001;
-const char OUTX_L_A = 0b10101000;
-const char OUTY_H_A = 0b10101011;
-const char OUTY_L_A = 0b10101010;
-const char OUTZ_H_A = 0b10101101;
-const char OUTZ_L_A = 0b10101100;
-
-static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
-static uint8_t       m_tx_buf1[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
-static uint8_t       m_tx_buf2[] = {OUTZ_H_A,0x00};
-static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
-uint8_t       m_rx_buf1[sizeof(m_tx_buf2)];    /**< RX buffer. */
-uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
-static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
-
-char XL_X[2]={0,0};
-char XL_Y[2]={0,0};
-char XL_Z[2]={0,0};
-
-char output_buffer[6];
-
-///// END SPI related
+ret_code_t ret;
+int j = 0;
 
 
 /**@brief Struct that contains pointers to the encoded advertising data. */
@@ -186,6 +179,9 @@ NRF_BLE_QWRS_DEF(m_qwr,NRF_SDH_BLE_TOTAL_LINK_COUNT);                         /*
 BLE_DB_DISCOVERY_DEF(m_ble_db_discovery);       /**< Database discovery module instance. */
 NRF_BLE_SCAN_DEF(m_scan);                       /**< Scanning Module instance. */
 
+
+
+
 static nrf_ble_amtc_t     m_amtc;
 //static nrf_ble_amts_t     m_amts;
 NRF_SDH_BLE_OBSERVER(m_amtc_ble_obs, BLE_AMTC_BLE_OBSERVER_PRIO, nrf_ble_amtc_on_ble_evt, &m_amtc);
@@ -194,8 +190,11 @@ NRF_SDH_BLE_OBSERVER(m_amtc_ble_obs, BLE_AMTC_BLE_OBSERVER_PRIO, nrf_ble_amtc_on
 
 NRF_CLI_UART_DEF(cli_uart, 0, 64, 16);
 NRF_CLI_RTT_DEF(cli_rtt);
-NRF_CLI_DEF(m_cli_uart, "throughput example:~$ ", &cli_uart.transport, '\r', 4);
-NRF_CLI_DEF(m_cli_rtt,  "throughput example:~$ ", &cli_rtt.transport,  '\n', 4);
+NRF_CLI_DEF(m_cli_uart, "", &cli_uart.transport, '\r', 4);
+NRF_CLI_DEF(m_cli_rtt,  "", &cli_rtt.transport,  '\n', 4);
+
+
+
 
 static board_role_t volatile m_board_role  = NOT_SELECTED;
 
@@ -244,6 +243,181 @@ static ble_gap_conn_params_t m_conn_param =
 
 static void test_terminate(void);
 void data_len_set(uint8_t value);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * @brief Enable power USB detection
+ *
+ * Configure if example supports USB port connection
+ */
+#ifndef USBD_POWER_DETECTION
+#define USBD_POWER_DETECTION true
+#endif
+
+
+static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
+                                    app_usbd_cdc_acm_user_event_t event);
+
+#define CDC_ACM_COMM_INTERFACE  0
+#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
+
+#define CDC_ACM_DATA_INTERFACE  1
+#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
+#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
+
+
+/**
+ * @brief CDC_ACM class instance
+ * */
+APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
+                            cdc_acm_user_ev_handler,
+                            CDC_ACM_COMM_INTERFACE,
+                            CDC_ACM_DATA_INTERFACE,
+                            CDC_ACM_COMM_EPIN,
+                            CDC_ACM_DATA_EPIN,
+                            CDC_ACM_DATA_EPOUT,
+                            APP_USBD_CDC_COMM_PROTOCOL_AT_V250
+);
+
+#define READ_SIZE 1
+
+static char m_rx_buffer[READ_SIZE];
+static char m_tx_buffer[NRF_DRV_USBD_EPSIZE]; //size=NRF_DRV_USBD_EPSIZE
+static bool m_send_flag = 0;
+
+/**
+ * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
+ * */
+static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
+                                    app_usbd_cdc_acm_user_event_t event)
+{
+    app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
+
+    switch (event)
+    {
+        case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
+        {
+            //bsp_board_led_on(LED_CDC_ACM_OPEN);
+
+            /*Setup first transfer*/
+            ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+                                                   m_rx_buffer,
+                                                   READ_SIZE);
+            UNUSED_VARIABLE(ret);
+            break;
+        }
+        //case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
+        //    bsp_board_led_off(LED_CDC_ACM_OPEN);
+        //    break;
+        //case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
+        //    bsp_board_led_invert(LED_CDC_ACM_TX);
+        //    break;
+        case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
+        {
+            ret_code_t ret;
+            NRF_LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
+            do
+            {
+                /*Get amount of data transfered*/
+                size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
+                NRF_LOG_INFO("RX: size: %lu char: %c", size, m_rx_buffer[0]);
+
+                /* Fetch data until internal buffer is empty */
+                ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+                                            m_rx_buffer,
+                                            READ_SIZE);
+            } while (ret == NRF_SUCCESS);
+
+            //bsp_board_led_invert(LED_CDC_ACM_RX);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+static void usbd_user_ev_handler(app_usbd_event_type_t event)
+{
+    switch (event)
+    {
+        case APP_USBD_EVT_DRV_SUSPEND:
+            //bsp_board_led_off(LED_USB_RESUME);
+            break;
+        case APP_USBD_EVT_DRV_RESUME:
+            //bsp_board_led_on(LED_USB_RESUME);
+            break;
+        case APP_USBD_EVT_STARTED:
+            break;
+        case APP_USBD_EVT_STOPPED:
+            app_usbd_disable();
+            //bsp_board_leds_off();
+            break;
+        case APP_USBD_EVT_POWER_DETECTED:
+            NRF_LOG_INFO("USB power detected");
+
+            if (!nrf_drv_usbd_is_enabled())
+            {
+                app_usbd_enable();
+            }
+            break;
+        case APP_USBD_EVT_POWER_REMOVED:
+            NRF_LOG_INFO("USB power removed");
+            app_usbd_stop();
+            break;
+        case APP_USBD_EVT_POWER_READY:
+            NRF_LOG_INFO("USB ready");
+            app_usbd_start();
+            break;
+        default:
+            break;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 char const * phy_str(ble_gap_phys_t phys)
@@ -576,12 +750,21 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // My edit: Get the pointer to the received data the length of which is p_evt->params.hvx.notif_len
             uint8_t * p_received_data = p_evt->p_rcv_data;
-            m_qwr;
+            char p_received_data2 = p_evt->p_rcv_data;
+            int lengthOf = sizeof(p_received_data2);
             //maybe replace this with function like is_part_of_connection_handles(p_gap_evt->conn_handle)
               if(!doPrint){
                     //NRF_LOG_INFO ("Connection handle: %d",p_evt->conn_handle);
                     //NRF_LOG_INFO("Number of connections: %d",ble_conn_state_central_conn_count());
-                    NRF_LOG_INFO("%d, %d, %d, %d, %d, %d\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+                     //NRF_LOG_INFO("i = %d",p_received_data[0]);
+                    //NRF_LOG_INFO("%d, %d, %d, %d, %d, %d",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+                    size_t size = sprintf(m_tx_buffer, "X: %d, %d, %d, %d, %d, %d, %d\r\n",p_received_data[6],p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+                    ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, m_tx_buffer, size);
+                    j++;
+                    if(j==1000){
+                      NRF_LOG_INFO("1000");
+                      j=0;
+                    }
                     doPrint=true;
                 }
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1248,11 +1431,7 @@ void cli_start(void)
 }
 
 
-void spi_event_handler(nrf_drv_spi_evt_t const * p_event,
-                       void *                    p_context)
-{
-    spi_xfer_done = true;
-}
+
 
 
 
@@ -1260,17 +1439,58 @@ void spi_event_handler(nrf_drv_spi_evt_t const * p_event,
 int main(void)
 {
     // Initialize.
+    
     log_init();
+    //////////  Virtual UART/USB stuff setup: ////////////
+    NRF_LOG_INFO("Setting up USBD CDC ACM.");
+    static const app_usbd_config_t usbd_config = {
+        .ev_state_proc = usbd_user_ev_handler
+    };
+    ret = nrf_drv_clock_init();
+    APP_ERROR_CHECK(ret);
+    nrf_drv_clock_lfclk_request(NULL);
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    }
+    ret = app_timer_init();
+    APP_ERROR_CHECK(ret);
+    app_usbd_serial_num_generate();
 
+    ret = app_usbd_init(&usbd_config);
+    APP_ERROR_CHECK(ret);
+    NRF_LOG_INFO("USBD CDC ACM set up.");
+
+    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    ret = app_usbd_class_append(class_cdc_acm);
+    APP_ERROR_CHECK(ret);
+
+    if (USBD_POWER_DETECTION)
+    {
+        ret = app_usbd_power_events_enable();
+        APP_ERROR_CHECK(ret);
+    }
+    else
+    {
+        NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
+
+        app_usbd_enable();
+        app_usbd_start();
+    }
+    ////////// END VIRTUAL UART SETUP //////////////////
+
+
+    
     cli_init();
     leds_init();
-    timer_init();
+    //timer_init(); //already initialized to run virtual USB
     counter_init();
     buttons_init();
     power_management_init();
     ble_stack_init();
     gap_params_init();
     gatt_init();
+
     advertising_data_set();
     scan_init();
 
@@ -1280,24 +1500,14 @@ int main(void)
 
     gatt_mtu_set(m_test_params.att_mtu);
     conn_evt_len_ext_set(m_test_params.conn_evt_len_ext_enabled);
-    
-    //SPI init:
-    nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
-    spi_config.ss_pin   = SPI_SS_PIN;
-    spi_config.miso_pin = SPI_MISO_PIN;
-    spi_config.mosi_pin = SPI_MOSI_PIN;
-    spi_config.sck_pin  = SPI_SCK_PIN;
-    spi_config.mode = NRF_DRV_SPI_MODE_0;
-    spi_config.frequency = NRF_DRV_SPI_FREQ_4M; //2147483648 = 8MHz
-    APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler, NULL));
 
-    // Start execution.
+
+    
+
+    //// Start execution.
     cli_start();
     buttons_enable();
 
-    //Write SPI settings to IMU chip:
-    nrf_drv_spi_transfer(&spi, m_tx_buf1, 2, m_rx_buf1, 2);
-    while(!nrf_spim_event_check(&spi, NRF_SPI_EVENT_READY)){}
 
 
     NRF_LOG_INFO("ATT MTU example started.");
@@ -1305,23 +1515,23 @@ int main(void)
     NRF_LOG_INFO("Press button 4 on other board.");
     uint32_t volatile delay_us = 1000000;
     int i = 0;
-    int j = 0;
     m_run_test = false;
 
 
     // Enter main loop.
-    for (;;)
-    {
-
+    while(true){
       
       idle_state_handle();
-      
+      while (app_usbd_event_queue_process()){}
 
-      //SPI code
-
-      j++;
+      #if NRF_CLI_ENABLED
+              nrf_cli_process(&m_cli_uart);
+      #endif
+      //UNUSED_RETURN_VALUE(NRF_LOG_PROCESS());
+      ///* Sleep CPU only if there was no interrupt since last loop processing */
+      //__WFE();
+        }
     }
-}
 
 
 /**

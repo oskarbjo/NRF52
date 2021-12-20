@@ -120,6 +120,7 @@ static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instanc
 //char TEST_STRING[] = {0x00,0x01};
 const char CTRL1_XL = 0b00010000;
 const char CTRL1_XL_SETTINGS = 0b01000000;
+//const char CTRL1_XL_SETTINGS = 0b10100000;
 
 const char STATUS_REG = 0b10011110;
 
@@ -138,9 +139,9 @@ uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
 
 static uint8_t       m_tx_buf_all_axes[] = {OUTX_H_A,OUTX_L_A,OUTY_H_A,OUTY_L_A,OUTZ_H_A,OUTZ_L_A,0x00};           /**< TX buffer. */
 static char       m_rx_buf_all_axes[sizeof(m_tx_buf_all_axes)+1];    /**< RX buffer. */
+int i = 0;
 
-
-char output_buffer[6];
+char output_buffer[7];
 
 ///// END SPI related
 
@@ -1229,7 +1230,7 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
     //  NRF_LOG_INFO("Data sent %d: %d",kk,data[kk]);
     //}
     //uint16_t           payload_len = p_ctx->max_payload_len;
-    uint16_t payload_len = 6;
+    uint16_t payload_len = sizeof(output_buffer);
     nrf_ble_amts_evt_t evt;
 
     ble_gatts_hvx_params_t const hvx_param =
@@ -1255,7 +1256,7 @@ void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
         NRF_LOG_ERROR("sd_ble_gatts_hvx() failed: 0x%x", err_code);
         return;
     }
-    NRF_LOG_INFO("Data successfully transmitted");
+    //NRF_LOG_INFO("Data successfully transmitted");
 
 
 }
@@ -1266,6 +1267,7 @@ void readAccelerometer(){
           nrf_drv_spi_transfer(&spi, m_tx_buf_ACC,7, m_rx_buf_ACC,7);
           while(!spi_xfer_done){}
           spi_xfer_done=false;
+          output_buffer[6]=0; //identifier for each board
           for(int i=0;i<6;i++){
             output_buffer[i] = m_rx_buf_ACC[i+1];
           }
@@ -1334,8 +1336,7 @@ int main(void)
     NRF_LOG_INFO("ATT MTU example started.");
     NRF_LOG_INFO("Press button 3 on the board connected to the PC.");
     NRF_LOG_INFO("Press button 4 on other board.");
-    uint32_t volatile delay_us = 1000000;
-    int i = 0;
+    uint32_t volatile delay_us = 500000;
     int j = 0;
     m_run_test = false;
 
@@ -1346,7 +1347,7 @@ int main(void)
 
       
       idle_state_handle();
-      nrf_delay_us(delay_us);
+      //nrf_delay_us(delay_us);
       //readAccelerometer();
       if(newAccDataAvailable()){
           readAccelerometer();
@@ -1354,7 +1355,11 @@ int main(void)
           {   
               //SPI stuff
               send_SPI_RX_buf(&m_amts);
-            
+              i++;
+              if(i==1000){
+                NRF_LOG_INFO("1000");
+                i=0;
+              }
           }
       }
       j++;

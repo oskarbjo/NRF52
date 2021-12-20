@@ -1,10 +1,10 @@
 <!DOCTYPE CrossStudio_Session_File>
 <session>
  <Bookmarks>
-  <BookmarkItem objectName="" line="691" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="4" extra="if (NRF_LOG_USES_TIMESTAMP)" color="5"/>
+  <BookmarkItem objectName="" line="428" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="3" extra="if (NRF_LOG_USES_TIMESTAMP)" color="5"/>
   <BookmarkItem objectName="" line="121" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="1" extra="if (NRF_LOG_USES_TIMESTAMP &amp;&amp; (timestamp_func == NULL))" color="5"/>
   <BookmarkItem objectName="" line="128" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="2" extra="if (NRF_LOG_USES_TIMESTAMP)" color="5"/>
-  <BookmarkItem objectName="" line="428" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="3" extra="if (NRF_LOG_USES_TIMESTAMP)" color="5"/>
+  <BookmarkItem objectName="" line="691" column="-1" path="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/components/libraries/log/src/nrf_log_frontend.c" number="4" extra="if (NRF_LOG_USES_TIMESTAMP)" color="5"/>
  </Bookmarks>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
   <BreakpointListItem trigger="" line="69" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="amtc.c" useHWbreakpoint="false"/>

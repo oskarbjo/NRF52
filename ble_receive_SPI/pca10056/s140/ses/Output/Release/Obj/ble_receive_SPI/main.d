@@ -5,6 +5,7 @@ Output/Release/Obj/ble_receive_SPI/main.o: \
  C\:/Program\ Files/Segger/arm_segger_embedded_studio_v560_win_x64_nordic/include/string.h \
  C\:/Program\ Files/Segger/arm_segger_embedded_studio_v560_win_x64_nordic/include/__crossworks.h \
  C\:/Program\ Files/Segger/arm_segger_embedded_studio_v560_win_x64_nordic/include/stdio.h \
+ C\:/Program\ Files/Segger/arm_segger_embedded_studio_v560_win_x64_nordic/include/stddef.h \
  C\:\Users\objoerkqvist\Segger\nRF5_SDK_17.1.0_ddde560\examples\ble_central_and_peripheral\my_code\ble_receive_SPI\pca10056\s140\ses\amt.h \
  ../../../../../../../components/softdevice/s140/headers/ble.h \
  ../../../../../../../components/softdevice/s140/headers/nrf_svc.h \
@@ -42,7 +43,6 @@ Output/Release/Obj/ble_receive_SPI/main.o: \
  ../../../../../../../components/libraries/util/sdk_os.h \
  ../../../../../../../components/libraries/util/sdk_errors.h \
  ../../../../../../../components/libraries/util/app_util.h \
- C\:/Program\ Files/Segger/arm_segger_embedded_studio_v560_win_x64_nordic/include/stddef.h \
  ../../../../../../../components/softdevice/s140/headers/nrf52/nrf_mbr.h \
  ../../../../../../../components/softdevice/s140/headers/nrf_svc.h \
  ../../../../../../../components/libraries/util/sdk_macros.h \
@@ -133,4 +133,40 @@ Output/Release/Obj/ble_receive_SPI/main.o: \
  ../../../../../../../modules/nrfx/drivers/include/nrfx_spim.h \
  ../../../../../../../modules/nrfx/hal/nrf_spim.h \
  ../../../../../../../modules/nrfx/drivers/include/nrfx_spi.h \
- ../../../../../../../modules/nrfx/hal/nrf_spi.h
+ ../../../../../../../modules/nrfx/hal/nrf_spi.h \
+ ../../../../../../../integration/nrfx/legacy/nrf_drv_usbd.h \
+ ../../../../../../../modules/nrfx/drivers/include/nrfx_usbd.h \
+ ../../../../../../../modules/nrfx/hal/nrf_usbd.h \
+ ../../../../../../../integration/nrfx/legacy/nrf_drv_usbd_errata.h \
+ ../../../../../../../modules\nrfx\drivers\src/../src/nrfx_usbd_errata.h \
+ ../../../../../../../modules/nrfx/mdk/nrf_erratas.h \
+ ../../../../../../../modules/nrfx/mdk/nrf.h \
+ ../../../../../../../modules/nrfx/mdk/nrf51_erratas.h \
+ ../../../../../../../modules/nrfx/mdk/nrf52_erratas.h \
+ ../../../../../../../modules/nrfx/mdk/nrf53_erratas.h \
+ ../../../../../../../modules/nrfx/mdk/nrf91_erratas.h \
+ ../../../../../../../integration/nrfx/legacy/nrf_drv_clock.h \
+ ../../../../../../../modules/nrfx/drivers/include/nrfx_clock.h \
+ ../../../../../../../modules/nrfx/hal/nrf_clock.h \
+ ../../../../../../../modules/nrfx/drivers/include/nrfx_power_clock.h \
+ ../../../../../../../integration/nrfx/legacy/nrf_drv_power.h \
+ ../../../../../../../modules/nrfx/drivers/include/nrfx_power.h \
+ ../../../../../../../modules/nrfx/hal/nrf_power.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_core.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_types.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_request.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_descriptor.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_langid.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_class_base.h \
+ ../../../../../../../components/libraries/usbd/app_usbd.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_string_desc.h \
+ ../../../../../../../components/libraries/usbd/app_usbd.h \
+ ../../../../../../../components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_class_base.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_descriptor.h \
+ ../../../../../../../components/libraries/usbd/class/cdc/app_usbd_cdc_desc.h \
+ ../../../../../../../components/libraries/usbd/class/cdc/app_usbd_cdc_types.h \
+ ../../../../../../../components/libraries/usbd/class/cdc/app_usbd_cdc_types.h \
+ ../../../../../../../components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm_internal.h \
+ ../../../../../../../components/libraries/usbd/app_usbd_serial_num.h \
+ ../../../../../../../components/libraries/atomic_fifo/nrf_atfifo.h

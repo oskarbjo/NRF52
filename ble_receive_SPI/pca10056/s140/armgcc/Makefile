@@ -10,6 +10,14 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 
 # Source files common to all targets
 SRC_FILES += \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_core.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \  
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \  
+  $(SDK_ROOT)/components/libraries/uart/app_uart_fifo.c \
+  $(SDK_ROOT)/components/libraries/fifo/app_fifo.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_usbd.c \
   $(SDK_ROOT)/components/libraries/atomic_flags/nrf_atflags.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_backend_rtt.c \
@@ -76,9 +84,18 @@ SRC_FILES += \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
+  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_power.c \
+  $(SDK_ROOT)/modules\nrfx\drivers\src\nrfx_power.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
+  $(SDK_ROOT)/modules\nrfx\drivers\src\
+  $(SDK_ROOT)/integration/nrfx/legacy \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
+  $(SDK_ROOT)/components/libraries/uart \
+  $(SDK_ROOT)/components/libraries/usbd \
+  $(SDK_ROOT)/components/libraries/usbd/class \
+  $(SDK_ROOT)/components/libraries/fifo \
   $(SDK_ROOT)/components/nfc/ndef/connection_handover/ble_pair_msg \
   $(SDK_ROOT)/components/nfc/t4t_parser/tlv \
   $(SDK_ROOT)/components/libraries/experimental_task_manager \
