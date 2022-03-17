@@ -731,6 +731,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
             // Enable notifications.
             err_code = nrf_ble_amtc_notif_enable(p_amt_c);
             APP_ERROR_CHECK(err_code);
+            NRF_LOG_INFO(err_code);
         } break;
 
         case NRF_BLE_AMT_C_EVT_NOTIFICATION:
@@ -1427,6 +1428,7 @@ void cli_start(void)
 {
 
     ret_code_t err_code =  nrf_cli_start(&m_cli_uart);
+
     APP_ERROR_CHECK(err_code);
 }
 
@@ -1441,6 +1443,7 @@ int main(void)
     // Initialize.
     
     log_init();
+
     //////////  Virtual UART/USB stuff setup: ////////////
     NRF_LOG_INFO("Setting up USBD CDC ACM.");
     static const app_usbd_config_t usbd_config = {

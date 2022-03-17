@@ -1,0 +1,937 @@
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "amt.h"
+//#include "counter.h"
+
+#include "sdk_config.h"
+#include "nrf.h"
+#include "ble.h"
+#include "ble_gatt.h"
+#include "ble_hci.h"
+#include "nordic_common.h"
+#include "nrf_gpio.h"
+#include "bsp_btn_ble.h"
+#include "ble_srv_common.h"
+#include "nrf_sdh.h"
+#include "nrf_sdh_ble.h"
+#include "nrf_ble_gatt.h"
+#include "nrf_ble_qwr.h"
+#include "ble_advdata.h"
+#include "app_timer.h"
+#include "app_error.h"
+//#include "nrf_cli.h"
+//#include "nrf_cli_rtt.h"
+//#include "nrf_cli_uart.h"
+#include "nrf_pwr_mgmt.h"
+#include "nrf_ble_scan.h"
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
+
+#include "app_util_platform.h"
+#include "nrf_delay.h"
+#include "boards.h"
+
+#include "nrf_drv_spi.h"
+#include "nrfx_spi.h"
+
+#include "lsm6dsrx.h"
+
+
+#define DATA_LENGTH_DEFAULT             27                                              /**< The stack default data length. */
+#define DATA_LENGTH_MAX                 251                                             /**< The stack maximum data length. */
+
+#define CONN_INTERVAL_DEFAULT           (uint16_t)(MSEC_TO_UNITS(7.5, UNIT_1_25_MS))    /**< Default connection interval used at connection establishment by central side. */
+
+#define CONN_INTERVAL_MIN               (uint16_t)(MSEC_TO_UNITS(7.5, UNIT_1_25_MS))    /**< Minimum acceptable connection interval, in units of 1.25 ms. */
+#define CONN_INTERVAL_MAX               (uint16_t)(MSEC_TO_UNITS(500, UNIT_1_25_MS))    /**< Maximum acceptable connection interval, in units of 1.25 ms. */
+#define CONN_SUP_TIMEOUT                (uint16_t)(MSEC_TO_UNITS(4000,  UNIT_10_MS))    /**< Connection supervisory timeout (4 seconds). */
+#define SLAVE_LATENCY                   0                                               /**< Slave latency. */
+
+
+
+#define BOARD_TESTER_BUTTON             BSP_BUTTON_2                                    /**< Button to press at the beginning of the test to indicate that this board is connected to the PC and takes input from it via the UART. */
+#define BOARD_DUMMY_BUTTON              BSP_BUTTON_3                                    /**< Button to press at the beginning of the test to indicate that this board is standalone (automatic behavior). */
+#define BUTTON_DETECTION_DELAY          APP_TIMER_TICKS(50)                             /**< Delay from a GPIOTE event until a button is reported as pushed (in number of timer ticks). */
+
+#define APP_BLE_CONN_CFG_TAG            1                                               /**< Tag that refers to the BLE stack configuration. */
+#define APP_BLE_OBSERVER_PRIO           3                                               /**< BLE observer priority of the application. There is no need to modify this value. */
+
+static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                           /**< Advertising handle used to identify an advertising set. */
+static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];                            /**< Buffer for storing an encoded advertising set. */
+
+//SPI related:
+#define SPI_INSTANCE  0 /**< SPI instance index. */
+static const nrf_drv_spi_t spi = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
+static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instance completed the transfer. */
+
+//#define TEST_STRING "1"
+//char TEST_STRING[] = {0x00,0x01};
+const char CTRL1_XL = 0b00010000;
+const char CTRL1_XL_SETTINGS = 0b01000000; //104Hz
+//const char CTRL1_XL_SETTINGS = 0b10100000; //3.33kHz
+
+const char STATUS_REG = 0b10011110;
+
+//static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
+static uint8_t       m_tx_buf_ACC[] = {OUTX_L_A,OUTX_H_A,OUTY_L_A,OUTY_H_A,OUTZ_L_A,OUTZ_H_A,0x00};
+static uint8_t m_tx_buf[] = {0x00,0x00};
+static uint8_t       m_tx_buf0[] = {STATUS_REG,0x00};
+static uint8_t       m_tx_buf1[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
+static uint8_t       m_tx_buf2[] = {OUTZ_H_A,0x00};
+static uint8_t       m_rx_buf_ACC[7];
+//static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
+uint8_t       m_rx_buf[sizeof(m_tx_buf0)];    /**< RX buffer. */
+uint8_t       m_rx_buf1[sizeof(m_tx_buf1)];    /**< RX buffer. */
+uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
+//static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
+
+static uint8_t       m_tx_buf_all_axes[] = {OUTX_H_A,OUTX_L_A,OUTY_H_A,OUTY_L_A,OUTZ_H_A,OUTZ_L_A,0x00};           /**< TX buffer. */
+static char       m_rx_buf_all_axes[sizeof(m_tx_buf_all_axes)+1];    /**< RX buffer. */
+int i = 0;
+
+char output_buffer[7];
+
+///// END SPI related
+
+
+/**@brief Struct that contains pointers to the encoded advertising data. */
+static ble_gap_adv_data_t m_adv_data =
+{
+    .adv_data =
+    {
+        .p_data = m_enc_advdata,
+        .len    = BLE_GAP_ADV_SET_DATA_SIZE_MAX
+    },
+    .scan_rsp_data =
+    {
+        .p_data = NULL,
+        .len    = 0
+
+    }
+};
+
+
+typedef enum
+{
+    NOT_SELECTED = 0x00,
+    BOARD_TESTER,
+    BOARD_DUMMY,
+} board_role_t;
+
+typedef struct
+{
+    uint16_t        att_mtu;                    /**< GATT ATT MTU, in bytes. */
+    uint16_t        conn_interval;              /**< Connection interval expressed in units of 1.25 ms. */
+    ble_gap_phys_t  phys;                       /**< Preferred PHYs. */
+    uint8_t         data_len;                   /**< Data length. */
+    bool            conn_evt_len_ext_enabled;   /**< Connection event length extension status. */
+} test_params_t;
+
+
+NRF_BLE_GQ_DEF(m_ble_gatt_queue,                /**< BLE GATT Queue instance. */
+               NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+               NRF_BLE_GQ_QUEUE_SIZE);
+NRF_BLE_GATT_DEF(m_gatt);                       /**< GATT module instance. */
+NRF_BLE_QWR_DEF(m_qwr);                         /**< Context for the Queued Write module.*/
+//BLE_DB_DISCOVERY_DEF(m_ble_db_discovery);       /**< Database discovery module instance. */
+NRF_BLE_SCAN_DEF(m_scan);                       /**< Scanning Module instance. */
+
+//static nrf_ble_amtc_t     m_amtc;
+static nrf_ble_amts_t     m_amts;
+//NRF_SDH_BLE_OBSERVER(m_amtc_ble_obs, BLE_AMTC_BLE_OBSERVER_PRIO, nrf_ble_amtc_on_ble_evt, &m_amtc);
+NRF_SDH_BLE_OBSERVER(m_amts_ble_obs, BLE_AMTS_BLE_OBSERVER_PRIO, nrf_ble_amts_on_ble_evt, &m_amts);
+
+//NRF_CLI_UART_DEF(cli_uart, 0, 64, 16);
+//NRF_CLI_RTT_DEF(cli_rtt);
+//NRF_CLI_DEF(m_cli_uart, "throughput example:~$ ", &cli_uart.transport, '\r', 4);
+//NRF_CLI_DEF(m_cli_rtt,  "throughput example:~$ ", &cli_rtt.transport,  '\n', 4);
+
+static board_role_t volatile m_board_role  = NOT_SELECTED;
+
+static bool volatile m_run_test;
+static bool volatile m_notif_enabled;
+static bool volatile m_mtu_exchanged;
+static bool volatile m_data_length_updated;
+static bool volatile m_phy_updated;
+static bool volatile m_conn_interval_configured;
+
+static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current BLE connection .*/
+static uint8_t m_gap_role     = BLE_GAP_ROLE_INVALID;       /**< BLE role for this connection, see @ref BLE_GAP_ROLES */
+
+// Name to use for advertising and connection.
+static char const m_target_periph_name[] = DEVICE_NAME;
+
+// Test parameters.
+// Settings like ATT MTU size are set only once, on the dummy board.
+// Make sure that defaults are sensible.
+static test_params_t m_test_params =
+{
+    .att_mtu                  = NRF_SDH_BLE_GATT_MAX_MTU_SIZE,
+    .data_len                 = NRF_SDH_BLE_GAP_DATA_LENGTH,
+    .conn_interval            = CONN_INTERVAL_DEFAULT,
+    .conn_evt_len_ext_enabled = true,
+    // Only symmetric PHYs are supported.
+#if defined(S140)
+    .phys.tx_phys             = BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS | BLE_GAP_PHY_CODED,
+    .phys.rx_phys             = BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS | BLE_GAP_PHY_CODED,
+#else
+    .phys.tx_phys             = BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS,
+    .phys.rx_phys             = BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS,
+#endif
+};
+
+
+// Connection parameters requested for connection.
+static ble_gap_conn_params_t m_conn_param =
+{
+    .min_conn_interval = CONN_INTERVAL_MIN,   // Minimum connection interval.
+    .max_conn_interval = CONN_INTERVAL_MAX,   // Maximum connection interval.
+    .slave_latency     = SLAVE_LATENCY,       // Slave latency.
+    .conn_sup_timeout  = CONN_SUP_TIMEOUT     // Supervisory timeout.
+};
+
+
+static void test_terminate(void);
+void data_len_set(uint8_t value);
+
+
+char const * phy_str(ble_gap_phys_t phys)
+{
+    static char const * str[] =
+    {
+        "1 Mbps",
+        "2 Mbps",
+        "Coded",
+        "Unknown"
+    };
+
+    switch (phys.tx_phys)
+    {
+        case BLE_GAP_PHY_1MBPS:
+            return str[0];
+
+        case BLE_GAP_PHY_2MBPS:
+        case BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS:
+        case BLE_GAP_PHY_2MBPS | BLE_GAP_PHY_1MBPS | BLE_GAP_PHY_CODED:
+            return str[1];
+
+        case BLE_GAP_PHY_CODED:
+            return str[2];
+
+        default:
+            return str[3];
+    }
+}
+
+
+static void instructions_print(void)
+{
+    NRF_LOG_INFO("Type 'config' to change the configuration parameters.");
+    NRF_LOG_INFO("You can use the Tab key to autocomplete your input.");
+    NRF_LOG_INFO("Type 'run' when you are ready to run the test.");
+}
+
+
+/**@brief Function for handling BLE_GAP_EVT_CONNECTED events.
+ * Save the connection handle and GAP role, then discover the peer DB.
+ */
+static void on_ble_gap_evt_connected(ble_gap_evt_t const * p_gap_evt)
+{
+    ret_code_t err_code;
+
+    m_conn_handle = p_gap_evt->conn_handle;
+    m_gap_role    = p_gap_evt->params.connected.role;
+
+    if (m_gap_role == BLE_GAP_ROLE_PERIPH)
+    {
+        NRF_LOG_INFO("Connected as a peripheral.");
+    }
+    else if (m_gap_role == BLE_GAP_ROLE_CENTRAL)
+    {
+        NRF_LOG_INFO("Connected as a central.");
+    }
+
+    // Stop scanning and advertising.
+    //nrf_ble_scan_stop();
+    (void) sd_ble_gap_adv_stop(m_adv_handle);
+
+
+    // Assign connection handle to the Queued Write module.
+    err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
+    APP_ERROR_CHECK(err_code);
+
+
+    if (m_gap_role == BLE_GAP_ROLE_PERIPH)
+    {
+        NRF_LOG_INFO("Sending PHY Update, %s.", phy_str(m_test_params.phys));
+
+        err_code = sd_ble_gap_phy_update(p_gap_evt->conn_handle, &m_test_params.phys);
+        APP_ERROR_CHECK(err_code);
+    }
+}
+
+
+/**@brief Function for handling BLE_GAP_EVT_DISCONNECTED events.
+ * Unset the connection handle and terminate the test.
+ */
+static void on_ble_gap_evt_disconnected(ble_gap_evt_t const * p_gap_evt)
+{
+    m_conn_handle = BLE_CONN_HANDLE_INVALID;
+
+    NRF_LOG_DEBUG("Disconnected: reason 0x%x.", p_gap_evt->params.disconnected.reason);
+
+    if (m_run_test)
+    {
+        NRF_LOG_WARNING("GAP disconnection event received while test was running.")
+    }
+
+
+    test_terminate();
+}
+
+
+/**@brief Function for handling BLE Stack events.
+ *
+ * @param[in] p_ble_evt  Bluetooth stack event.
+ */
+static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
+{
+    uint32_t              err_code;
+    ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
+
+    switch (p_ble_evt->header.evt_id)
+    {
+        case BLE_GAP_EVT_CONNECTED:
+            on_ble_gap_evt_connected(p_gap_evt);
+            break;
+
+        case BLE_GAP_EVT_DISCONNECTED:
+            on_ble_gap_evt_disconnected(p_gap_evt);
+            break;
+
+        case BLE_GAP_EVT_CONN_PARAM_UPDATE:
+        {
+            m_conn_interval_configured = true;
+            NRF_LOG_INFO("Connection interval updated: 0x%x, 0x%x.",
+                p_gap_evt->params.conn_param_update.conn_params.min_conn_interval,
+                p_gap_evt->params.conn_param_update.conn_params.max_conn_interval);
+        } break;
+
+        case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST:
+        {
+            // Accept parameters requested by the peer.
+            ble_gap_conn_params_t params;
+            params = p_gap_evt->params.conn_param_update_request.conn_params;
+            err_code = sd_ble_gap_conn_param_update(p_gap_evt->conn_handle, &params);
+            APP_ERROR_CHECK(err_code);
+
+            NRF_LOG_INFO("Connection interval updated (upon request): 0x%x, 0x%x.",
+                p_gap_evt->params.conn_param_update_request.conn_params.min_conn_interval,
+                p_gap_evt->params.conn_param_update_request.conn_params.max_conn_interval);
+        } break;
+
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+        {
+            err_code = sd_ble_gatts_sys_attr_set(p_gap_evt->conn_handle, NULL, 0, 0);
+            APP_ERROR_CHECK(err_code);
+        } break;
+
+        case BLE_GATTC_EVT_TIMEOUT: // Fall through.
+        case BLE_GATTS_EVT_TIMEOUT:
+        {
+            NRF_LOG_DEBUG("GATT timeout, disconnecting.");
+            err_code = sd_ble_gap_disconnect(m_conn_handle,
+                                             BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+            APP_ERROR_CHECK(err_code);
+        } break;
+
+        case BLE_GAP_EVT_PHY_UPDATE:
+        {
+            ble_gap_evt_phy_update_t const * p_phy_evt = &p_ble_evt->evt.gap_evt.params.phy_update;
+
+            if (p_phy_evt->status == BLE_HCI_STATUS_CODE_LMP_ERROR_TRANSACTION_COLLISION)
+            {
+                // Ignore LL collisions.
+                NRF_LOG_DEBUG("LL transaction collision during PHY update.");
+                break;
+            }
+
+            m_phy_updated = true;
+
+            ble_gap_phys_t phys = {0};
+            phys.tx_phys = p_phy_evt->tx_phy;
+            phys.rx_phys = p_phy_evt->rx_phy;
+            NRF_LOG_INFO("PHY update %s. PHY set to %s.",
+                         (p_phy_evt->status == BLE_HCI_STATUS_CODE_SUCCESS) ?
+                         "accepted" : "rejected",
+                         phy_str(phys));
+        } break;
+
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
+        {
+            err_code = sd_ble_gap_phy_update(p_gap_evt->conn_handle, &m_test_params.phys);
+            APP_ERROR_CHECK(err_code);
+        } break;
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+
+/**@brief AMT server event handler. */
+static void amts_evt_handler(nrf_ble_amts_evt_t evt)
+{
+    ret_code_t err_code;
+
+    switch (evt.evt_type)
+    {
+        case NRF_BLE_AMTS_EVT_NOTIF_ENABLED:
+        {
+            NRF_LOG_INFO("Notifications enabled.");
+
+            m_notif_enabled = true;
+
+            if (m_board_role != BOARD_TESTER)
+            {
+                return;
+            }
+
+            if (m_test_params.conn_interval != CONN_INTERVAL_DEFAULT)
+            {
+                NRF_LOG_DEBUG("Updating connection parameters..");
+                m_conn_param.min_conn_interval = m_test_params.conn_interval;
+                m_conn_param.max_conn_interval = m_test_params.conn_interval;
+                err_code = sd_ble_gap_conn_param_update(m_conn_handle, &m_conn_param);
+
+                if (err_code != NRF_SUCCESS)
+                {
+                    NRF_LOG_ERROR("sd_ble_gap_conn_param_update() failed: 0x%x.", err_code);
+                }
+            }
+            else
+            {
+                m_conn_interval_configured = true;
+            }
+        } break;
+
+
+
+
+        case NRF_BLE_AMTS_EVT_TRANSFER_FINISHED:
+        {
+
+        } break;
+    }
+}
+
+
+
+/**@brief Function for handling events from the GATT library. */
+static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
+{
+    switch (p_evt->evt_id)
+    {
+        case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
+        {
+            m_mtu_exchanged = true;
+            NRF_LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.",
+                         p_evt->params.att_mtu_effective);
+        } break;
+
+        case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
+        {
+            m_data_length_updated = true;
+            NRF_LOG_INFO("Data length updated to %u bytes.", p_evt->params.data_length);
+        } break;
+    }
+
+    nrf_ble_amts_on_gatt_evt(&m_amts, p_evt);
+}
+
+
+/**@brief Function for setting up advertising data. */
+static void advertising_data_set(void)
+{
+    ret_code_t ret;
+
+    ble_gap_adv_params_t const adv_params =
+    {
+        .properties    =
+        {
+          .type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED,
+        },
+        .p_peer_addr   = NULL,
+        .filter_policy = BLE_GAP_ADV_FP_ANY,
+        .interval      = ADV_INTERVAL,
+        .duration      = 0,
+
+        .primary_phy   = BLE_GAP_PHY_1MBPS, // Must be changed to connect in long range. (BLE_GAP_PHY_CODED)
+        .secondary_phy = BLE_GAP_PHY_2MBPS,
+    };
+
+    ble_advdata_t const adv_data =
+    {
+        .name_type          = BLE_ADVDATA_FULL_NAME,
+        .flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE,
+        .include_appearance = false,
+    };
+
+    ret = ble_advdata_encode(&adv_data, m_adv_data.adv_data.p_data, &m_adv_data.adv_data.len);
+    APP_ERROR_CHECK(ret);
+
+    ret = sd_ble_gap_adv_set_configure(&m_adv_handle, &m_adv_data, &adv_params);
+    APP_ERROR_CHECK(ret);
+}
+
+
+/**@brief Function for starting advertising. */
+static void advertising_start(void)
+{
+    NRF_LOG_INFO("Starting advertising.");
+
+
+    UNUSED_RETURN_VALUE(sd_ble_gap_adv_stop(m_adv_handle));
+
+    ret_code_t err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+static void log_init(void)
+{
+    ret_code_t err_code = NRF_LOG_INIT(app_timer_cnt_get);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+
+
+/**@brief Function for initializing the timer.
+ *
+ * @details Initializes the timer module. This creates and starts application timers.
+ */
+static void timer_init(void)
+{
+    ret_code_t err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
+}
+
+
+
+static void set_responder(){
+  // Set the data length to the maximum if necessary, so that this board
+  // accepts whatever value requested by the tester.
+  uint8_t dl = 0;
+  (void) nrf_ble_gatt_data_length_get(&m_gatt, BLE_CONN_HANDLE_INVALID, &dl);
+  if (dl != DATA_LENGTH_MAX)
+  {
+      data_len_set(DATA_LENGTH_MAX);
+  }
+
+  advertising_start();
+}
+
+
+
+
+/**@brief Function for handling Queued Write module errors.
+ *
+ * @details A pointer to this function is passed to each service that may need to inform the
+ *          application about an error.
+ *
+ * @param[in]   nrf_error   Error code that contains information about what went wrong.
+ */
+static void nrf_qwr_error_handler(uint32_t nrf_error)
+{
+    APP_ERROR_HANDLER(nrf_error);
+}
+
+
+/**@brief Function for initializing the Queued Write module.
+ */
+static void qwr_init(void)
+{
+    ret_code_t         err_code;
+    nrf_ble_qwr_init_t qwr_init_obj = {0};
+
+    // Initialize Queued Write Module.
+    qwr_init_obj.error_handler = nrf_qwr_error_handler;
+
+    err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init_obj);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+static void server_init(void)
+{
+    qwr_init();
+    nrf_ble_amts_init(&m_amts, amts_evt_handler);
+}
+
+
+/**@brief Function for initializing the BLE stack.
+ *
+ * @details Initializes the SoftDevice and the BLE event interrupt.
+ */
+static void ble_stack_init(void)
+{
+    ret_code_t err_code;
+
+    err_code = nrf_sdh_enable_request();
+    APP_ERROR_CHECK(err_code);
+
+    // Configure the BLE stack using the default settings.
+    // Fetch the start address of the application RAM.
+    uint32_t ram_start = 0;
+    err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Enable BLE stack.
+    err_code = nrf_sdh_ble_enable(&ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Register a handler for BLE events.
+    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
+}
+
+
+/**@brief Function for initializing GAP parameters.
+ *
+ * @details This function sets up all the necessary GAP (Generic Access Profile) parameters of the
+ *          device, including the device name and the preferred connection parameters.
+ */
+static void gap_params_init(void)
+{
+    ret_code_t              err_code;
+    ble_gap_conn_sec_mode_t sec_mode;
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
+
+    err_code = sd_ble_gap_device_name_set(&sec_mode,
+                                          (uint8_t const *)DEVICE_NAME,
+                                          strlen(DEVICE_NAME));
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ble_gap_ppcp_set(&m_conn_param);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+/**@brief Function for initializing the GATT library. */
+static void gatt_init(void)
+{
+    ret_code_t err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+/**@brief Function for initializing power management.
+ */
+static void power_management_init(void)
+{
+    ret_code_t ret;
+    ret = nrf_pwr_mgmt_init();
+    APP_ERROR_CHECK(ret);
+}
+
+
+void preferred_phy_set(ble_gap_phys_t * p_phy)
+{
+    memcpy(&m_test_params.phys, p_phy, sizeof(ble_gap_phys_t));
+}
+
+
+void gatt_mtu_set(uint16_t att_mtu)
+{
+    ret_code_t err_code;
+
+    m_test_params.att_mtu = att_mtu;
+
+    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+void connection_interval_set(uint16_t value)
+{
+    m_test_params.conn_interval = value;
+}
+
+
+void conn_evt_len_ext_set(bool status)
+{
+    ret_code_t err_code;
+    ble_opt_t  opt;
+
+    memset(&opt, 0x00, sizeof(opt));
+    opt.common_opt.conn_evt_ext.enable = status ? 1 : 0;
+
+    err_code = sd_ble_opt_set(BLE_COMMON_OPT_CONN_EVT_EXT, &opt);
+    APP_ERROR_CHECK(err_code);
+
+    m_test_params.conn_evt_len_ext_enabled = status;
+}
+
+
+void data_len_set(uint8_t value)
+{
+    ret_code_t err_code;
+    err_code = nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, value);
+    APP_ERROR_CHECK(err_code);
+
+    m_test_params.data_len = value;
+}
+
+
+bool is_tester_board(void)
+{
+    return (m_board_role == BOARD_TESTER);
+}
+
+
+
+void test_begin(void)
+{
+    NRF_LOG_INFO("Preparing the test.");
+    NRF_LOG_FLUSH();
+
+#if defined(S132)
+    // PHY does not need to be updated for s132.
+     m_phy_updated = true;
+#endif
+
+    switch (m_gap_role)
+    {
+        default:
+            // If no connection was established, the role is not established either.
+            // In this case, start both the advertising and the scanning.
+            advertising_start();
+            //scan_start();
+            break;
+
+        case BLE_GAP_ROLE_PERIPH:
+            advertising_start();
+            m_test_params.phys.tx_phys = BLE_GAP_PHY_2MBPS;
+            break;
+
+        case BLE_GAP_ROLE_CENTRAL:
+            //scan_start();
+            break;
+    }
+}
+
+
+static void test_run(void)
+{
+    //counter_start();
+    nrf_ble_amts_notif_spam(&m_amts);
+}
+
+
+static bool is_test_ready()
+{
+    return (   (m_board_role == BOARD_TESTER)
+            && m_conn_interval_configured
+            && m_notif_enabled
+            && m_mtu_exchanged
+            && (m_data_length_updated || m_test_params.data_len == DATA_LENGTH_DEFAULT)
+            && !m_run_test);
+}
+
+
+/**@brief Function for handling the idle state (main loop).
+ *
+ * @details Handles any pending operations, then sleeps until the next event occurs.
+ */
+static void idle_state_handle(void)
+{
+
+    if (NRF_LOG_PROCESS() == false)
+    {
+        nrf_pwr_mgmt_run();
+    }
+}
+
+
+static void test_terminate(void)
+{
+    m_run_test                 = false;
+    m_notif_enabled            = false;
+    m_mtu_exchanged            = false;
+    m_data_length_updated      = false;
+    m_phy_updated              = false;
+    m_conn_interval_configured = false;
+
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+    {
+        NRF_LOG_INFO("Disconnecting...");
+
+        ret_code_t err_code;
+        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+
+        if (err_code != NRF_SUCCESS)
+        {
+            NRF_LOG_ERROR("sd_ble_gap_disconnect() failed: 0x%0x.", err_code);
+        }
+    }
+    else
+    {
+        if (m_board_role == BOARD_DUMMY)
+        {
+            if (m_gap_role == BLE_GAP_ROLE_PERIPH)
+            {
+                advertising_start();
+            }
+            else
+            {
+                //scan_start();
+            }
+        }
+    }
+}
+
+
+
+
+
+void spi_event_handler(nrf_drv_spi_evt_t const * p_event,
+                       void *                    p_context)
+{
+    spi_xfer_done = true;
+}
+
+void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
+
+
+    char *data = output_buffer;
+    //for(int kk=0;kk<sizeof(data);kk++){
+    //  NRF_LOG_INFO("Data sent %d: %d",kk,data[kk]);
+    //}
+    //uint16_t           payload_len = p_ctx->max_payload_len;
+    uint16_t payload_len = sizeof(output_buffer);
+    nrf_ble_amts_evt_t evt;
+
+    ble_gatts_hvx_params_t const hvx_param =
+    {
+        .type   = BLE_GATT_HVX_NOTIFICATION,
+        .handle = p_ctx->amts_char_handles.value_handle,
+        .p_data = data,
+        .p_len  = &payload_len,
+    };
+
+    uint32_t err_code = NRF_SUCCESS;
+
+    //NRF_LOG_INFO("Sending data...");
+    err_code = sd_ble_gatts_hvx(p_ctx->conn_handle, &hvx_param);
+
+    if (err_code == NRF_ERROR_RESOURCES)
+    {
+        // Wait for BLE_GATTS_EVT_HVN_TX_COMPLETE.
+        p_ctx->busy = true;
+    }
+    else if (err_code != NRF_SUCCESS)
+    {
+        NRF_LOG_ERROR("sd_ble_gatts_hvx() failed: 0x%x", err_code);
+        return;
+    }
+    //NRF_LOG_INFO("Data successfully transmitted");
+
+
+}
+
+
+void readAccelerometer(){
+           //nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf, 2);
+          nrf_drv_spi_transfer(&spi, m_tx_buf_ACC,7, m_rx_buf_ACC,7);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+          output_buffer[6]=0; //identifier for each board
+          for(int i=0;i<6;i++){
+            output_buffer[i] = m_rx_buf_ACC[i+1];
+          }
+
+}
+
+
+//bool newAccDataAvailable(){
+//   bool dataIsAvailable = false;
+
+//   nrf_drv_spi_transfer(&spi, m_tx_buf0, 1, m_rx_buf, 2);
+//   while(!spi_xfer_done){}
+//   spi_xfer_done=false;
+//   if((m_rx_buf[1] & 0x01) == 0x01){
+//      dataIsAvailable=true;
+//   }
+//   return dataIsAvailable;
+
+//}
+
+
+int main(void)
+{
+    // Initialize.
+
+    log_init();
+
+    //timer_init();
+    //power_management_init();
+    //ble_stack_init();
+    //gap_params_init();
+    //gatt_init();
+    //advertising_data_set();
+    //set_responder();
+
+
+    //server_init();
+
+    //gatt_mtu_set(m_test_params.att_mtu);
+    //conn_evt_len_ext_set(m_test_params.conn_evt_len_ext_enabled);
+    
+    ////SPI init:
+    //nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
+    //spi_config.ss_pin   = SPI_SS_PIN;
+    //spi_config.miso_pin = SPI_MISO_PIN;
+    //spi_config.mosi_pin = SPI_MOSI_PIN;
+    //spi_config.sck_pin  = SPI_SCK_PIN;
+    //spi_config.mode = NRF_DRV_SPI_MODE_0;
+    //spi_config.frequency = NRF_DRV_SPI_FREQ_2M; //2147483648 = 8MHz
+    //APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler, NULL));
+
+
+
+    //Write SPI settings to IMU chip:
+    //nrf_drv_spi_transfer(&spi, m_tx_buf1, 2, m_rx_buf1, 2);
+    //while(!spi_xfer_done){}
+    //spi_xfer_done=false;
+
+
+    NRF_LOG_INFO("ATT MTU example started.");
+    NRF_LOG_INFO("Press button 3 on the board connected to the PC.");
+    NRF_LOG_INFO("Press button 4 on other board.");
+    uint32_t volatile delay_us = 500000;
+    int j = 0;
+    m_run_test = false;
+
+
+    // Enter main loop.
+    for (;;)
+      {
+      }
+}
+
+
+/**
+ * @}
+ */

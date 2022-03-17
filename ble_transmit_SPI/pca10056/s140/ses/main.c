@@ -119,8 +119,8 @@ static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instanc
 //#define TEST_STRING "1"
 //char TEST_STRING[] = {0x00,0x01};
 const char CTRL1_XL = 0b00010000;
-const char CTRL1_XL_SETTINGS = 0b01000000;
-//const char CTRL1_XL_SETTINGS = 0b10100000;
+const char CTRL1_XL_SETTINGS = 0b01000000; //104Hz
+//const char CTRL1_XL_SETTINGS = 0b10100000; //3.33kHz
 
 const char STATUS_REG = 0b10011110;
 
