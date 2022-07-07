@@ -102,6 +102,7 @@
       <file file_name="../config/sdk_config.h" />
       <file file_name="lsm6dsrx.h" />
       <file file_name="lsm6dsrx.c" />
+      <file file_name="MV2.h" />
     </folder>
     <folder Name="nRF_Segger_RTT">
       <file file_name="../../../../../../../external/segger_rtt/SEGGER_RTT.c" />

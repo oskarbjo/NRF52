@@ -276,7 +276,7 @@
 // <4294967295=> Not connected 
 
 #ifndef SPI_SS_PIN
-#define SPI_SS_PIN 8
+#define SPI_SS_PIN 8 //8 for IMU, 6 for hall
 #endif
 
 // <o> SPI_IRQ_PRIORITY  - Interrupt priority
@@ -304,10 +304,10 @@
 
 
 
-//GPIO PINS
-#ifndef GPIO_PIN_8
-#define GPIO_PIN_8 7
-#endif
+////GPIO PINS
+//#ifndef GPIO_PIN_8
+//#define GPIO_PIN_8 7
+//#endif
 
 
 //==========================================================
@@ -6050,7 +6050,7 @@
 // <e> SPI1_ENABLED - Enable SPI1 instance
 //==========================================================
 #ifndef SPI1_ENABLED
-#define SPI1_ENABLED 0
+#define SPI1_ENABLED 1
 #endif
 // <q> SPI1_USE_EASY_DMA  - Use EasyDMA
  

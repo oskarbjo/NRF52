@@ -759,7 +759,7 @@ static void amtc_evt_handler(nrf_ble_amtc_t * p_amt_c, nrf_ble_amtc_evt_t * p_ev
                     //NRF_LOG_INFO("Number of connections: %d",ble_conn_state_central_conn_count());
                      //NRF_LOG_INFO("i = %d",p_received_data[0]);
                     //NRF_LOG_INFO("%d, %d, %d, %d, %d, %d",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
-                    size_t size = sprintf(m_tx_buffer, "X: %d, %d, %d, %d, %d, %d, %d\r\n",p_received_data[6],p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
+                    size_t size = sprintf(m_tx_buffer, "X: %d, %d, %d, %d, %d, %d\r\n",p_received_data[0],p_received_data[1],p_received_data[2],p_received_data[3],p_received_data[4],p_received_data[5]);
                     ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, m_tx_buffer, size);
                     j++;
                     if(j==1000){

@@ -75,7 +75,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="30" y="564" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/example_cmds.c" useBinaryEdit="0" left="0" path="main.c" selected="1" top="539" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="18" y="556" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/example_cmds.c" useBinaryEdit="0" left="0" path="main.c" selected="1" top="515" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="4" y="276" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/main.c" useBinaryEdit="0" left="0" path="amtc.c" selected="0" top="250" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="3" y="86" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/main.c" useBinaryEdit="0" left="0" path="amts.c" selected="0" top="81" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="60" useTextEdit="1" openedFrom="C:/Users/objoerkqvist/Segger/nRF5_SDK_17.1.0_ddde560/examples/ble_central_and_peripheral/my_code/ble_receive_SPI/pca10056/s140/ses/amtc.c" useBinaryEdit="0" left="0" path="amt.h" selected="0" top="42" codecName="Default"/>

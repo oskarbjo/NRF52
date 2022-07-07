@@ -13,12 +13,25 @@
 //const char CTRL1_XL = 0b00010000;
 //const char CTRL1_XL_SETTINGS = 0b01000000;
 
-#define OUTX_L_A 0b10101000
+#define OUTX_L_A 0b10101000 //First bit is set to 1 to read back register (see lsm6d data sheet on SPI bus interface)
 #define OUTX_H_A 0b10101001
 #define OUTY_L_A 0b10101010
 #define OUTY_H_A 0b10101011
 #define OUTZ_L_A 0b10101100
 #define OUTZ_H_A 0b10101101
+
+#define OUTX_L_G 0b10100010 //First bit is set to 1 to read back register (see lsm6d data sheet on SPI bus interface)
+#define OUTX_H_G 0b10100011
+#define OUTY_L_G 0b10100100
+#define OUTY_H_G 0b10100101
+#define OUTZ_L_G 0b10100110
+#define OUTZ_H_G 0b10100111
+
+#define CTRL1_XL 0b00010000
+#define CTRL1_XL_SETTINGS 0b01000000 //104Hz
+
+#define CTRL2_G 0b00010001
+#define CTRL2_G_SETTINGS 0b01000010 //104Hz
 
 
 //const char STATUS_REG = 0b10011110;

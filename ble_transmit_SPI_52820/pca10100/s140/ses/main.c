@@ -80,6 +80,7 @@
 #include "nrfx_spi.h"
 
 #include "lsm6dsrx.h"
+#include "MV2.h"
 
 
 #define DATA_LENGTH_DEFAULT             251                                              /**< The stack default data length. */
@@ -112,24 +113,33 @@ static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];                    
 static const nrf_drv_spi_t spi = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
 static volatile bool spi_xfer_done;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
-//#define TEST_STRING "1"
-//char TEST_STRING[] = {0x00,0x01};
-const char CTRL1_XL = 0b00010000;
-const char CTRL1_XL_SETTINGS = 0b01000000; //104Hz
-//const char CTRL1_XL_SETTINGS = 0b10100000; //3.33kHz
+//#define SPI_INSTANCE_2  1 /**< SPI instance index. */
+//static const nrf_drv_spi_t spi_2 = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE_2);  /**< SPI instance. */
+
+
+//IMU 
+bool accelerometerAvailable = false;
+bool gyroAvailable = false;
 
 const char STATUS_REG = 0b10011110;
-
 //static uint8_t       m_tx_buf[] = {0b10001111,0x00000000};           /**< TX buffer. */
 static uint8_t       m_tx_buf_ACC[] = {OUTX_L_A,OUTX_H_A,OUTY_L_A,OUTY_H_A,OUTZ_L_A,OUTZ_H_A,0x00};
+static uint8_t       m_tx_buf_G[] = {OUTX_L_G,OUTX_H_G,OUTY_L_G,OUTY_H_G,OUTZ_L_G,OUTZ_H_G,0x00};
+
 static uint8_t m_tx_buf[] = {0x00,0x00};
-static uint8_t       m_tx_buf0[] = {STATUS_REG,0x00};
-static uint8_t       m_tx_buf1[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
+static uint8_t       m_tx_buf_STATUS[] = {STATUS_REG,0x00};
+static uint8_t       m_tx_bf_CTRL_XL[] = {CTRL1_XL,CTRL1_XL_SETTINGS};
+static uint8_t       m_tx_bf_CTRL_G[] = {CTRL2_G,CTRL2_G_SETTINGS};
 static uint8_t       m_tx_buf2[] = {OUTZ_H_A,0x00};
 static uint8_t       m_rx_buf_ACC[7];
+static uint8_t       m_rx_buf_G[7];
+static uint8_t       m_rx_buf_MV2_x[2];
+static uint8_t       m_rx_buf_MV2_y[2];
+static uint8_t       m_rx_buf_MV2_z[2];
+
 //static uint8_t       m_tx_buf3[] = {OUTZ_L_A,0x00};
-uint8_t       m_rx_buf[sizeof(m_tx_buf0)];    /**< RX buffer. */
-uint8_t       m_rx_buf1[sizeof(m_tx_buf1)];    /**< RX buffer. */
+uint8_t       m_rx_buf[sizeof(m_tx_buf_STATUS)];    /**< RX buffer. */
+uint8_t       m_rx_buf1[sizeof(m_tx_bf_CTRL_XL)];    /**< RX buffer. */
 uint8_t       m_rx_buf2[sizeof(m_tx_buf2)];    /**< RX buffer. */
 //static const uint8_t m_length = sizeof(m_tx_buf2)+1;        /**< Transfer length. */
 
@@ -137,7 +147,15 @@ static uint8_t       m_tx_buf_all_axes[] = {OUTX_H_A,OUTX_L_A,OUTY_H_A,OUTY_L_A,
 static char       m_rx_buf_all_axes[sizeof(m_tx_buf_all_axes)+1];    /**< RX buffer. */
 int i = 0;
 
-char output_buffer[7];
+//MV2
+static uint8_t       m_tx_buf_MV2_readX[] = {0xEC,0x10};
+static uint8_t       m_tx_buf_MV2_readY[] = {0xEC,0x11};
+static uint8_t       m_tx_buf_MV2_readZ[] = {0xEC,0x12};
+//static uint8_t       m_tx_buf_MV2_readT[] = {MV2_reg00,requestReadOutT};
+
+
+
+char output_buffer[6];
 
 ///// END SPI related
 
@@ -1033,6 +1051,18 @@ void spi_event_handler(nrf_drv_spi_evt_t const * p_event,
     //}
 }
 
+void spi2_event_handler(nrf_drv_spi_evt_t const * p_event,
+                       void *                    p_context)
+{
+    spi_xfer_done = true;
+    //NRF_LOG_INFO("Transfer completed.");
+    //if (m_rx_buf[0] != 0)
+    //{
+    //    NRF_LOG_INFO(" Received:");
+    //    NRF_LOG_HEXDUMP_INFO(m_rx_buf, strlen((const char *)m_rx_buf));
+    //}
+}
+
 void send_SPI_RX_buf(nrf_ble_amts_t * p_ctx){
 
 
@@ -1078,26 +1108,65 @@ void readAccelerometer(){
           nrf_drv_spi_transfer(&spi, m_tx_buf_ACC,7, m_rx_buf_ACC,7);
           while(!spi_xfer_done){}
           spi_xfer_done=false;
-          output_buffer[6]=0; //identifier for each board
+          //output_buffer[0]=1; //identifier, XL=1
           for(int i=0;i<6;i++){
             output_buffer[i] = m_rx_buf_ACC[i+1];
           }
+}
 
+void readGyro(){
+           //nrf_drv_spi_transfer(&spi, m_tx_buf2, 1, m_rx_buf, 2);
+          nrf_drv_spi_transfer(&spi, m_tx_buf_G,7, m_rx_buf_G,7);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+          //output_buffer[0]=0; //identifier, G=0
+          for(int i=0;i<6;i++){
+            output_buffer[i] = m_rx_buf_G[i+1];
+          }
+}
+
+void readMV2(){
+          nrf_drv_spi_transfer(&spi, m_tx_buf_MV2_readY,2, m_rx_buf_MV2_x,2);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+          nrf_drv_spi_transfer(&spi, m_tx_buf_MV2_readZ,2, m_rx_buf_MV2_y,2);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+          nrf_drv_spi_transfer(&spi, m_tx_buf_MV2_readX,2, m_rx_buf_MV2_z,2);
+          while(!spi_xfer_done){}
+          spi_xfer_done=false;
+
+          for(int i=0;i<6;i++){
+          if(i==0 || i==1){
+            output_buffer[i] = m_rx_buf_MV2_x[i];
+            }
+          if(i==2 || i==3){
+            output_buffer[i] = m_rx_buf_MV2_y[i-2];
+            }
+          if(i==4 || i==5){
+            output_buffer[i] = m_rx_buf_MV2_y[i-4];
+            }
+          }
 }
 
 
-bool newAccDataAvailable(){
-   bool dataIsAvailable = false;
-
-   nrf_drv_spi_transfer(&spi, m_tx_buf0, 1, m_rx_buf, 2);
+void newIMUDataAvailable(){
+   //spi_config.ss_pin = 8; //pin 8 is for IMU on NRF52820 design
+   nrf_drv_spi_transfer(&spi, m_tx_buf_STATUS, 2, m_rx_buf, 2);
    while(!spi_xfer_done){}
    spi_xfer_done=false;
-   if((m_rx_buf[1] & 0x01) == 0x01){
-      dataIsAvailable=true;
+   if((m_rx_buf[1] & 0b00000001) == 0x01){
+      accelerometerAvailable=true;
    }
-   return dataIsAvailable;
-
+   if((m_rx_buf[1] & 0b00000010) == 0x02){
+      gyroAvailable=true;
+   }
+   //if((m_rx_buf[0] & 0x02) == 0x01){
+   //   gyroAvailable=true;
+   //}
 }
+
+
 
 void gpio_init(void)
 {
@@ -1105,13 +1174,39 @@ void gpio_init(void)
     nrf_gpio_range_cfg_output(8, 8);		
 }
 
-void toggleIOpin(){
-nrf_gpio_pin_write(GPIO_PIN_8, GPIO_state);
-            if(GPIO_state==1){
-            GPIO_state = 0;
-            }
-            else{GPIO_state = 1;}
+//void toggleIOpin(){
+//nrf_gpio_pin_write(GPIO_PIN_8, GPIO_state);
+//            if(GPIO_state==1){
+//            GPIO_state = 0;
+//            }
+//            else{GPIO_state = 1;}
+//}
+
+void setupIMU(){
+    nrf_drv_spi_transfer(&spi, m_tx_bf_CTRL_XL, 2, m_rx_buf1, 2);
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
+    nrf_drv_spi_transfer(&spi, m_tx_bf_CTRL_G, 2, m_rx_buf1, 2);
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
 }
+
+void setupMV2(){
+    static uint8_t setting0[] = {0xEC,0x10};
+    static uint8_t setting1[] = {0xED,0x02};
+    static uint8_t setting2[] = {0xEE,0x08};
+    nrf_drv_spi_transfer(&spi, setting0, 2, m_rx_buf1, 2);
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
+    nrf_drv_spi_transfer(&spi, setting1, 2, m_rx_buf1, 2);
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
+    nrf_drv_spi_transfer(&spi, setting2, 2, m_rx_buf1, 2);
+    while(!spi_xfer_done){}
+    spi_xfer_done=false;
+}
+
+
 
 int main(void)
 {
@@ -1129,7 +1224,7 @@ int main(void)
   
     gatt_mtu_set(m_test_params.att_mtu);
     conn_evt_len_ext_set(m_test_params.conn_evt_len_ext_enabled);
-    advertising_start(); 
+    advertising_start();
 
     gpio_init();
     
@@ -1143,14 +1238,24 @@ int main(void)
     spi_config.frequency = NRF_DRV_SPI_FREQ_2M; //2147483648 = 8MHz
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, spi_event_handler, NULL));
 
+    //nrf_drv_spi_config_t spi_config2 = NRF_DRV_SPI_DEFAULT_CONFIG; 
+    //spi_config2.ss_pin   = 6;
+    //spi_config2.miso_pin = SPI_MISO_PIN;
+    //spi_config2.mosi_pin = SPI_MOSI_PIN;
+    //spi_config2.sck_pin  = SPI_SCK_PIN;
+    //spi_config2.mode = NRF_DRV_SPI_MODE_0;
+    //spi_config2.frequency = NRF_DRV_SPI_FREQ_2M; //2147483648 = 8MHz
+    //APP_ERROR_CHECK(nrf_drv_spi_init(&spi_2, &spi_config2, spi2_event_handler, NULL));
 
 
-    ////Write SPI settings to IMU chip:
-    nrf_drv_spi_transfer(&spi, m_tx_buf1, 2, m_rx_buf1, 2);
-    while(!spi_xfer_done){}
-    spi_xfer_done=false;
 
-    uint32_t volatile delay_us = 100;
+    ////Write settings to IMU chip:
+    //setupIMU();
+    ////Write settings to MV2:
+    setupMV2();
+
+
+    uint32_t volatile delay_us = 250;
     int j = 0;
     m_run_test = false;
     
@@ -1163,16 +1268,24 @@ int main(void)
     {     
      //idle_state_handle();
 
-           //readAccelerometer();
-            nrf_drv_spi_transfer(&spi, m_tx_buf1, 2, m_rx_buf1, 2);
-            while(!spi_xfer_done){}
-            spi_xfer_done=false;
+
+     ////////// READ AND TRANSMIT IMU DATA: //////////
+     //newIMUDataAvailable();
+     //if(accelerometerAvailable){
+     // readAccelerometer();
+     // accelerometerAvailable=false;
+     // send_SPI_RX_buf(&m_amts); //send data over bluetooth
+     //}   
+
+     ////////// READ AND TRANSMIT MV2 DATA: ///////////
+     readMV2();
+     send_SPI_RX_buf(&m_amts); //send data over bluetooth
+
 
      nrf_delay_us(delay_us);
 
      //if(is_test_ready()){
-      //nrf_delay_us(delay_us);
-      //send_SPI_RX_buf(&m_amts);
+     //send_SPI_RX_buf(&m_amts);
      //}
     }
 
